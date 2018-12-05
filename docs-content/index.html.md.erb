@@ -1,26 +1,25 @@
 ---
-title: Boomi Data Services on PKS for PCF (Beta)
+title: Boomi Data Services for PCF (PKS) (Beta)
 owner: Partners
 ---
 
 <p class="note warning">
 <strong>WARNING! </strong>
-The  Boomi Data Services on PKS for PCF tile is currently in beta and is intended for evaluation and test purposes only.
+The  Boomi Data Services for Pivoral Cloud Foundry (PCF) (PKS) integration is currently in beta and is intended for evaluation and test purposes only.
 Do not use this product in a PCF production environment.
 </p>
 
-This documentation describes the Boomi Data Services on PKS for PCF, the Boomi Data services on PKS 
-Broker for PCF enables Boomi Integrators to run Boomi IPacks on PKS and register them to PCF.
+This documentation describes the Boomi Data Services for PCF (PKS). This integration enables Boomi Integrators to run Boomi IPacks on PKS and register them to PCF.
 
 ## <a id='overview'></a>Overview
 
-The Boomi Data Services on PKS for PCF (Beta) registers a service broker with PCF and exposes its deployed iPacks to
+The Boomi Data Services for PCF (PKS) registers a service broker with PCF and exposes its deployed iPacks to
 the CF Marketplace. Developers can then create service plan instances using Apps Manager or the Cloud Foundry Command
 Line Interface (cf CLI) and bind them to their apps.
 
 ## <a id='features'></a>Key Features
 
-Boomi Data Services on PKS for PCF (Beta) includes the following key features:
+Boomi Data Services for PCF (PKS) includes the following key features:
 
 * Rolling updates via Helm.
 * Automated Service Broker Registration.
@@ -29,7 +28,7 @@ Boomi Data Services on PKS for PCF (Beta) includes the following key features:
 
 ## <a id="snapshot"></a>Product Snapshot
 
-The following table provides version and version-support information about Boomi Data Services on PKS for PCF (Beta).
+The following table provides version and version-support information about Boomi Data Services for PCF (PKS) (Beta).
 
 <table class="nice">
     <th>Element</th>
@@ -40,7 +39,7 @@ The following table provides version and version-support information about Boomi
     </tr>
     <tr>
         <td>Release date</td>
-        <td>November 1, 2018</td>
+        <td>December 7, 2018</td>
     </tr>
     <tr>
         <td>Software component version</td>
@@ -52,7 +51,7 @@ The following table provides version and version-support information about Boomi
     </tr>
     <tr>
         <td>IaaS support</td>
-        <td>GCP, and vSphere</td>
+        <td>GCP and vSphere</td>
     </tr>
     <tr>
         <td>IPsec support</td>
@@ -62,7 +61,7 @@ The following table provides version and version-support information about Boomi
 
 
 ## <a id="reqs"></a>Requirements
-Boomi Data Services on PKS for PCF (Beta) has the following requirements:
+Boomi Data Services for PCF (PKS) has the following requirements:
 
 + kubectl
 
@@ -71,8 +70,6 @@ Boomi Data Services on PKS for PCF (Beta) has the following requirements:
 + local docker daemon
 
 ## <a id="limitations"></a>Limitations
-
-**List any known limitations.**
 
 + Unautomated CF registration
 
