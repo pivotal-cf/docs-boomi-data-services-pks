@@ -1,18 +1,22 @@
 ---
-title: Installing & Configuring Boomi Data Services for PCF on PKS
+title: Installing & Configuring Boomi Data Services for PCF (PKS) on PKS
 owner: Partners
 ---
 
-This topic describes how to install Pivotal Boomi Data Services for PCF on  Pivotal Container Service (PKS). The installation process involves loading the Boomi Data Services container images into your container registry, and then using the helm package manager to install the Boomi Data Services Atom resource into Kubernetes. After the Boomi Data Services is resource is available you will be able to work with the Atom Cloud.
+This topic describes how to install Pivotal Boomi Data Services for Pivotal Cloud Foundry (PCF) on  
+Pivotal Container Service (PKS). The installation process involves loading the Boomi Data Services 
+container images into your container registry and then using the helm package manager to 
+install the Boomi Data Services Atom resource into Kubernetes. After the Boomi Data Services 
+resource is available you will be able to work with the Atom Cloud.
 
 ## Prerequisites
 
-Before you install Boomi Data Services for PCF on PKS, ensure that you have installed the required software and prepared your Kubernetes environment as described in Prerequisites.
+Before you install Boomi Data Services for PCF (PKS) on PKS, ensure that you have installed the required software and prepared your Kubernetes environment as described in Prerequisites.
 Procedure
 
-Follow these steps to download and install the Boomi Data Services for PKS container images, and install the Boomi Data Services Atom resource.
+Follow these steps to download and install the Boomi Data Services for PCF (PKS) container images, and install the Boomi Data Services Atom resource.
 
-##  Pivotal Container Services (PKS) running on Google Cloud Platform (GCP)
+##  Pivotal Container Services (PKS) Running on Google Cloud Platform (GCP)
 
 Follow this procedure to deploy Boomi Data Services for Kubernetes to PKS.
 
@@ -26,12 +30,12 @@ Before you attempt to deploy Boomi Data Services, ensure that the target cluster
 
     `pks list-clusters`
 
-Note: The PKS login cookie typically expires after a day or two.
+**Note:** The PKS login cookie typically expires after a day or two.
 
-Note: If any problems occur during deployment, retry deploying Boomi Data Services by first removing the previous deployment.
+**Note:** If any problems occur during deployment, retry deploying Boomi Data Services by first removing the previous deployment.
 
 
-## Configuring kubectl and helm
+## Configuring Kubectl and Helm
 
 Ensure that helm has sufficient privileges via a Kubernetes service account. Use a command like:
 
@@ -72,7 +76,7 @@ Obtain the Kubernetes service account key (key.json) file. You will need to iden
 
 After creating your GKE cluster, use the gcloud utility to login to GCP, and to set your current project and cluster context:
 
-1. Log into GCP:
+1. Login to GCP:
 
     ```
     $ gcloud auth login
@@ -141,13 +145,13 @@ After creating your GKE cluster, use the gcloud utility to login to GCP, and to 
     $ docker tag dell-boomi-dap      harbor.registry.tld/dell-boomi-dap
     ```
 
-6. Login into your private registry
+6. Login to your private registry
 
     ```
     $ docker login harbor.registry.tld
     ```
 
-7. And push to the registry
+7. Push to the registry
 
     ```
     $ docker push harbor.registry.tld/dell-boomi-molecule
@@ -155,7 +159,7 @@ After creating your GKE cluster, use the gcloud utility to login to GCP, and to 
     $ docker push harbor.registry.tld/dell-boomi-dap
     ```
 
-8. Now ensure your PKS cluster has access to your private registry.
+8. Ensure your PKS cluster has access to your private registry.
 
     ```
     $ kubectl create secret docker-registry harbor-reg \
@@ -167,7 +171,7 @@ After creating your GKE cluster, use the gcloud utility to login to GCP, and to 
 
 9. For PKS or GCP deployments only
 
-   Note: If you did not tag the images with a container registry prefix or project name (for example, if you are using your own local Minikube deployment), then you can skip this step.
+**Note:** If you did not tag the images with a container registry prefix or project name (for example, if you are using your own local Minikube deployment), then you can skip this step.
 
    If you want to push the Boomi Data Services for Kubernetes docker images to a GCP container registry, set the project name and image repo name and then use Docker to push the images. For example, to push the images to Google Cloud Registry using the current Google Cloud project name:
 
