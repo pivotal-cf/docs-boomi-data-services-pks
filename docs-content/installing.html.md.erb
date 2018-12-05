@@ -30,10 +30,9 @@ Before you attempt to deploy Boomi Data Services, ensure that the target cluster
 
     `pks list-clusters`
 
-**Note:** The PKS login cookie typically expires after a day or two.
-
-**Note:** If any problems occur during deployment, retry deploying Boomi Data Services by first removing the previous deployment.
-
+<div class="note"><strong>Notes:</strong> <br><br><ul><li>The PKS login cookie typically expires after a day or two.</li>
+ <li>If any problems occur during deployment, retry deploying Boomi Data Services by first removing the previous deployment.</li>
+</ul></div>
 
 ## Configuring Kubectl and Helm
 
@@ -171,9 +170,10 @@ After creating your GKE cluster, use the gcloud utility to login to GCP, and to 
 
 9. For PKS or GCP deployments only
 
-**Note:** If you did not tag the images with a container registry prefix or project name (for example, if you are using your own local Minikube deployment), then you can skip this step.
+    <p class="note"><strong>Note:</strong>  If you did not tag the images with a container registry prefix or project name.
+     For example, if you are using your own local Minikube deployment, then you can skip this step.</p>
 
-   If you want to push the Boomi Data Services for Kubernetes docker images to a GCP container registry, set the project name and image repo name and then use Docker to push the images. For example, to push the images to Google Cloud Registry using the current Google Cloud project name:
+    If you want to push the Boomi Data Services for Kubernetes docker images to a GCP container registry, set the project name and image repo name and then use Docker to push the images. For example, to push the images to Google Cloud Registry using the current Google Cloud project name:
 
     ```
     $ PROJECT=$(gcloud config list core/project --format='value(core.project)')
