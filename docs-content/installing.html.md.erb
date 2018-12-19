@@ -18,11 +18,11 @@ Follow these steps to download and install the Boomi Data Services for PCF (PKS)
 
 ##  PKS Running on GCP
 
-Follow this procedure to deploy Boomi Data Services for Kubernetes to PKS.
+Follow this procedure to deploy Boomi Data Services for PCF to PKS.
 
 #### Required Software
 
-This procedure requires that PKS on Google Cloud Platform (GCP) is installed and running, along with all prerequisite software and configuration. See Installing PKS for Boomi Data Services for Kubernetes, Using Google Cloud Platform (GCP) for information about installing PKS.
+This procedure requires that PKS on Google Cloud Platform (GCP) is installed and running, along with all prerequisite software and configuration. See Installing PKS for Boomi Data Services for PCF, Using Google Cloud Platform (GCP) for information about installing PKS.
 
 Obtain the Kubernetes service account key (key.json) file. You will need to identify this file in your configuration to authenticate with PKS.
 
@@ -56,7 +56,7 @@ Initialize and upgrade helm with the command:
 
 ##  Google Kubernetes Engine (GKE) Running on Google Cloud Platform (GCP)
 
-This section describes the requirements for using Boomi Data Services for Kubernetes with Google Kubernetes Engine (GKE) deployments.
+This section describes the requirements for using Boomi Data Services for PCF with Google Kubernetes Engine (GKE) deployments.
 
 ## Cluster Requirements
 
@@ -173,7 +173,7 @@ After creating your GKE cluster, use the gcloud utility to login to GCP, and to 
     <p class="note"><strong>Note:</strong>  If you did not tag the images with a container registry prefix or project name.
      For example, if you are using your own local Minikube deployment, then you can skip this step.</p>
 
-    If you want to push the Boomi Data Services for Kubernetes docker images to a GCP container registry, set the project name and image repo name and then use Docker to push the images. For example, to push the images to Google Cloud Registry using the current Google Cloud project name:
+    If you want to push the Boomi Data Services for PCF docker images to a GCP container registry, set the project name and image repo name and then use Docker to push the images. For example, to push the images to Google Cloud Registry using the current Google Cloud project name:
 
     ```
     $ PROJECT=$(gcloud config list core/project --format='value(core.project)')
