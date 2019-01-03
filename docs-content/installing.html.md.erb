@@ -3,40 +3,70 @@ title: Installing and Configuring Boomi Data Services for PCF (PKS) on PKS
 owner: Partners
 ---
 
-This topic describes how to install Pivotal Boomi Data Services for Pivotal Cloud Foundry (PCF) on  
-Pivotal Container Service (PKS). The installation process involves loading the Boomi Data Services 
-container images into your container registry and then using the helm package manager to 
-install the Boomi Data Services Atom resource into Kubernetes. After the Boomi Data Services 
-resource is available you will be able to work with the Atom Cloud.
 
-## Prerequisites
 
-Before you install Boomi Data Services for PCF (PKS) on PKS, ensure that you have installed the required software and prepared your Kubernetes environment as described in Prerequisites.
-Procedure
+This topic describes how to install Boomi Data Services for Pivotal Cloud Foundry (PCF) on
+Pivotal Container Service (PKS).
 
-Follow these steps to download and install the Boomi Data Services for PCF (PKS) container images, and install the Boomi Data Services Atom resource.
 
-##  PKS Running on GCP
+##<a id="download"></a> Download Boomi Data Services for PCF (PKS)
 
-Follow this procedure to deploy Boomi Data Services for Kubernetes to PKS.
+Boomi Data Services for PCF (PKS) is available for download from Pivotal Network.  It is
+distributed as a tarred, gzipped archive, named something like `dell-boomi-pks-<version>.tar.gz`.
 
-#### Required Software
+This archive contains all of the Kubernetes definition files, and Docker container images
+that are needed to run Boomi Data Servies for PCF.
 
-This procedure requires that PKS on Google Cloud Platform (GCP) is installed and running, along with all prerequisite software and configuration. See Installing PKS for Boomi Data Services for Kubernetes, Using Google Cloud Platform (GCP) for information about installing PKS.
+To unpack the archive, use standard UNIX `tar` commands:
 
-Obtain the Kubernetes service account key (key.json) file. You will need to identify this file in your configuration to authenticate with PKS.
+    $ tar -xzvf dell-boomi-pks-$VERSION.tar.gz
 
-Before you attempt to deploy Boomi Data Services, ensure that the target cluster is available. Execute the following command to make sure that the target cluster displays in the output:
 
-    `pks list-clusters`
+##<a id="obtain-cluster-access"></a> Obtain Cluster Access
 
-<div class="note"><strong>Notes:</strong> <br><br><ul><li>The PKS login cookie typically expires after a day or two.</li>
- <li>If any problems occur during deployment, retry deploying Boomi Data Services by first removing the previous deployment.</li>
-</ul></div>
+A Pivotal Container Service (PKS) cluster is required to install Boomi Data Services for PCF.
+To obtain access to your cluster, do the following:
 
-## Configuring Kubectl and Helm
+  1. Log in to PKS: `pks login -a <pks-url> -u <username> -p <password> -k`
+  2. Update your `~/.kube/config`: `pks get-credentials <cluster-name>`
+  3. Configure your Kubernetes client: `kubectl config use-context <cluster-name>`
 
-Ensure that helm has sufficient privileges via a Kubernetes service account. Use a command like:
+
+##<a id="push-docker-images"></a> Push Docker Images
+
+Before you can instantiate the container images that comprise the Boomi Data Services for PCF,
+they need to be loaded into a Docker Container Registry that is accessible to the PKS cluster.
+
+First, load the image files into your local Docker daemon:
+
+    $ docker load -i ./images/*
+    644879075e24: Loading layer [===========================>] 117.9MB/117.9MB
+    ...
+    2b9cc11f6cfc: Loading layer [===========================>] 176.6kB/176.6kB
+    Loaded image: dell-boomi-pks:v0.3.0.dev.3.g6024f1e
+
+To verify that the Docker images are now available:
+
+    $ docker images "dell-boomi-*"
+    REPOSITORY           TAG                     IMAGE ID      CREATED             SIZE
+    dell-boomi-molecule  v0.3.0.dev.3.g6024f1e   1d5b86baf556  30 minutes ago      763M
+    dell-boomi-broker    v0.3.0.dev.3.g6024f1e   4e1243bd22c6  30 minutes ago      217M
+    dell-boomi-dap       v0.3.0.dev.3.g6024f1e   ef9800123caa  30 minutes ago      198M
+
+Finally, tag those images and push them to your remote registry:
+
+    $ docker tag dell-boomi-molecule harbor.registry.tld/dell-boomi-molecule
+    $ docker tag dell-boomi-broker   harbor.registry.tld/dell-boomi-broker
+    $ docker tag dell-boomi-dap      harbor.registry.tld/dell-boomi-dap
+
+    $ docker login harbor.registry.tld
+    $ docker push harbor.registry.tld/dell-boomi-molecule
+    $ docker push harbor.registry.tld/dell-boomi-broker
+    $ docker push harbor.registry.tld/dell-boomi-dap
+
+##<a id="install-helm"></a> Install Helm / Tiller
+
+Boomi Data Services for PCF is distributed as a Helm chart.  To install Helm on your PKS cluster, use the `initialize_helm_rbac.yaml` file contained in the Boomi Data Services for PCF (PKS) asset, downloaded from Pivotal Network.
 
     $ kubectl create -f initialize_helm_rbac.yaml
 
@@ -54,173 +84,23 @@ Initialize and upgrade helm with the command:
     Tiller (the Helm server-side component) has been upgraded to the current version.
     Happy Helming!
 
-##  Google Kubernetes Engine (GKE) Running on Google Cloud Platform (GCP)
 
-This section describes the requirements for using Boomi Data Services for Kubernetes with Google Kubernetes Engine (GKE) deployments.
+##<a id="install-chart"></a> Configure and Install the Helm Chart
 
-## Cluster Requirements
+To configure the Helm chart, update the chart values, in `chart/values.yml`, setting your
+Boomi username, password, master account ID, and Environment name.
 
-When creating the GKE cluster, ensure that you make the following selections on the Create a Kubernetes cluster screen of the Google Cloud Platform console:
+Then, install the Helm chart into your PKS cluster:
 
-1. For the Cluster Version option, select the most recent version of Kubernetes.
-2. Scale the Machine Type option to at least 2 vCPUs / 7.5 GB memory.
-3. For the Node Image option, you must select Ubuntu. You cannot deploy Boomi Data Services with the Container-Optimized OS (cos) image.
-4. Set the Size to 4 or more nodes.
-5. Set Automatic node repair to Disabled (the default).
-6. In the Advanced Options (click More to display Advanced Options), select Enable Kubernetes alpha features in this cluster. Also select I understand the consequences to confirm the choice.
-
-Obtain the Kubernetes service account key (key.json) file. You will need to identify this file in your configuration to authenticate with GKE.
-
-## Setting the Kubernetes Context
-
-After creating your GKE cluster, use the gcloud utility to login to GCP, and to set your current project and cluster context:
-
-1. Login to GCP:
-
-    ```
-    $ gcloud auth login
-    ```
-
-2. Set the current project to the project where you will deploy Boomi Data Services:
-
-    ```
-    $ gcloud config set project <project-name>
-    ```
-
-3. Set the context to the Kubernetes cluster that you created for Boomi Data Services:
-
-   1. Access GCP Console.
-   2. Select **Kubernetes Engine** > **Clusters**.
-   3. Click **Connect** next to the cluster that you configured for Boomi Data Services, and copy the connection command.
-
-4. On your local client machine, paste the command to set the context to your cluster. For example:
-
-    ```
-    $ gcloud container clusters get-credentials <username> --zone us-central1-a --project <my-project>
-
-    Fetching cluster endpoint and auth data.
-    kubeconfig entry generated for <username>.
-    ```
-
-## Installation Instructions
-
-1. Download the Boomi Data Services for PKS software from Pivotal Network. The download file has the name: `dell-boomi-pks-<version>.tar.gz` Go to the directory where you downloaded Boomi Data Services for PKS, and unpack the downloaded software. For example:
-
-    ```
-    $ cd ~/Downloads
-    $ tar -xzf dell-boomi-pks-*.tar.gz
-    $ tree <add tree output
-    ```
-
-2. Go into the new dell-boomi-pks<version> directory:
-
-    ```
-    $ cd ./dell-boomi-pks-*
-    ```
-
-3. Load the Boomi Data Services images into your local Docker registry:
-
-    ```
-    $ docker load -i ./images/*
-    644879075e24: Loading layer [===========================>] 117.9MB/117.9MB
-    ...
-    2b9cc11f6cfc: Loading layer [===========================>] 176.6kB/176.6kB
-    Loaded image: dell-boomi-pks:v0.3.0.dev.3.g6024f1e
-    ```
-
-4. Verify that both Docker images are now available:
-
-    ```
-    $ docker images “dell-boomi-*"`
-    REPOSITORY           TAG                     IMAGE ID      CREATED             SIZE
-    dell-boomi-molecule  v0.3.0.dev.3.g6024f1e   1d5b86baf556  30 minutes ago      763M
-    ```
-
-5. Tag the Boomi Data Services images with your private repo URI.
-
-    ```
-    $ docker tag dell-boomi-molecule harbor.registry.tld/dell-boomi-molecule
-    $ docker tag dell-boomi-broker   harbor.registry.tld/dell-boomi-broker
-    $ docker tag dell-boomi-dap      harbor.registry.tld/dell-boomi-dap
-    ```
-
-6. Login to your private registry
-
-    ```
-    $ docker login harbor.registry.tld
-    ```
-
-7. Push to the registry
-
-    ```
-    $ docker push harbor.registry.tld/dell-boomi-molecule
-    $ docker push harbor.registry.tld/dell-boomi-broker
-    $ docker push harbor.registry.tld/dell-boomi-dap
-    ```
-
-8. Ensure your PKS cluster has access to your private registry.
-
-    ```
-    $ kubectl create secret docker-registry harbor-reg \
-        --docker-server=https://harbor.registry.tld \
-        --docker-username=user \
-        --docker-password=12345 \
-        --docker-email=your.name@your.company.com
-    ```
-
-9. For PKS or GCP deployments only
-
-    <p class="note"><strong>Note:</strong>  If you did not tag the images with a container registry prefix or project name.
-     For example, if you are using your own local Minikube deployment, then you can skip this step.</p>
-
-    If you want to push the Boomi Data Services for Kubernetes docker images to a GCP container registry, set the project name and image repo name and then use Docker to push the images. For example, to push the images to Google Cloud Registry using the current Google Cloud project name:
-
-    ```
-    $ PROJECT=$(gcloud config list core/project --format='value(core.project)')
-    $ IMAGE_REPO="gcr.io/${PROJECT}/Boomi Data Services-for-kubernetes"
-
-    $ IMAGE_NAME="${IMAGE_REPO}:$(cat ./images/Boomi Data Services-for-kubernetes-tag)"
-    $ docker tag $(cat ./images/Boomi Data Services-for-kubernetes-id) ${IMAGE_NAME}
-    $ gcloud docker -- push ${IMAGE_NAME}
-
-    $ IMAGE_NAME="${IMAGE_REPO}:$(cat ./images/Boomi Data Services-operator-tag)"
-    $ docker tag $(cat ./images/Boomi Data Services-operator-id) ${IMAGE_NAME}
-    $ gcloud docker -- push ${IMAGE_NAME}
-    ```
-
-10. Create the tiller service account and ensure that helm has the required Kubernetes service account privileges:
-
-    ```
-    $ kubectl create -f ./initialize_helm_rbac.yaml
-    serviceaccount "tiller" created
-    clusterrolebinding.rbac.authorization.k8s.io "tiller" created
-    ```
-
-    This sets the necessary privileges for helm with a service account named tiller.
-
-11. Initialize and upgrade helm:
-
-    ````
-    $ helm init --wait --service-account tiller --upgrade`
-    $HELM_HOME has been configured at /<path>/.helm.
-
-    Tiller (the Helm server-side component) has been upgraded to the current version.
-    Happy Helming!
-    ```
-
-12. Update the chart values (./chart/values.yml) and add your username, password, account ID, and environment to the chart values file.
-
-13. Use helm to create a new Boomi Data Services release, specifying the YAML configuration file if you created one. For example, to create a new release with the name “Dell-Boomi”:
-
-    ```
     $ helm install --name boomi -f chart/values.yml  ./chart`
-    ```
 
-    Helm installs the new release into the Kubernetes default namespace specified in the current Kubernetes context. If you want to install into a different namespace, include the --namespace option in the helm command.
 
-    After the deployment process completes, a message appears with a link to this documentation:
+Helm installs the new release into the Kubernetes default namespace specified in the
+current Kubernetes context. If you want to install into a different namespace, include
+the `--namespace` option in the `helm` command.
 
-    ```
+After the deployment process completes, the following should appear in the terminal:
+
     NAME:   boomi
     LAST DEPLOYED: Wed Oct 31 14:12:41 2018
     NAMESPACE: default
@@ -244,4 +124,3 @@ After creating your GKE cluster, use the gcloud utility to login to GCP, and to 
     NAME                                        READY  STATUS             RESTARTS  AGE
     boomi-dell-boomi-broker-6cc845c56f-mgqf8    0/1    ContainerCreating  0         1s
     boomi-dell-boomi-molecule-74bbccb5fb-c5nj4  0/2    Init:0/1           0         1s
-    ```
