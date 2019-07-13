@@ -1,5 +1,5 @@
 ---
-title: Installing and Configuring Boomi Data Services for PCF (PKS) on PKS
+title: Installing Boomi Data Services for PCF (PKS) on PKS
 owner: Partners
 ---
 
@@ -12,7 +12,7 @@ Pivotal Container Service (PKS).
 ##<a id="download"></a> Download Boomi Data Services for PCF (PKS)
 
 Boomi Data Services for PCF (PKS) is available for download from Pivotal Network.  It is
-distributed as a tarred, gzipped archive, named something like `dell-boomi-pks-<version>.tar.gz`.
+distributed as a tarred, gzipped archive, named `dell-boomi-pks-<version>.tar.gz`.
 
 This archive contains all of the Kubernetes definition files and Docker container images
 that are needed to run Boomi Data Servies for PCF.
@@ -32,95 +32,115 @@ To obtain access to your cluster, do the following:
   3. Configure your Kubernetes client: `kubectl config use-context <cluster-name>`
 
 
-##<a id="push-docker-images"></a> Push Docker Images
+##<a id="prereqs"></a> Installation Prerequisites
 
-Before you can instantiate the container images that comprise the Boomi Data Services for PCF (PKS),
-they need to be loaded into a Docker Container Registry that is accessible to the PKS cluster.
+To install, you will need the following:
 
-First, load the image files into your local Docker daemon:
+  1. A Pivotal Operations Manager instance
 
-    $ docker load -i ./images/*
-    644879075e24: Loading layer [===========================>] 117.9MB/117.9MB
-    ...
-    2b9cc11f6cfc: Loading layer [===========================>] 176.6kB/176.6kB
-    Loaded image: dell-boomi-pks:v0.3.0.dev.3.g6024f1e
+  2. The Pivotal Container Service Tile installed to that
+     Operations Manager.
 
-To verify that the Docker images are now available:
+  3. The Pivotal Application Service Tile (Cloud Foundry)
+     installed to that Operations Manager.
 
-    $ docker images "dell-boomi-*"
-    REPOSITORY           TAG                     IMAGE ID      CREATED             SIZE
-    dell-boomi-molecule  v0.3.0.dev.3.g6024f1e   1d5b86baf556  30 minutes ago      763M
-    dell-boomi-broker    v0.3.0.dev.3.g6024f1e   4e1243bd22c6  30 minutes ago      217M
-    dell-boomi-dap       v0.3.0.dev.3.g6024f1e   ef9800123caa  30 minutes ago      198M
+  4. A Docker Registry; the VMWare Harbor Registry Tile for PCF,
+     installed via Operations Manager, will suffice.
 
-Finally, tag those images and push them to your remote registry:
+  5. A PKS Cluster.
 
-    $ docker tag dell-boomi-molecule harbor.registry.tld/dell-boomi-molecule
-    $ docker tag dell-boomi-broker   harbor.registry.tld/dell-boomi-broker
-    $ docker tag dell-boomi-dap      harbor.registry.tld/dell-boomi-dap
+  6. A configured `kubectl` environment.
 
-    $ docker login harbor.registry.tld
-    $ docker push harbor.registry.tld/dell-boomi-molecule
-    $ docker push harbor.registry.tld/dell-boomi-broker
-    $ docker push harbor.registry.tld/dell-boomi-dap
+###<a id="install-helm"> Installing Helm/Tiller (with RBAC)
 
-##<a id="install-helm"></a> Install Helm / Tiller
+Boomi Data Services is distributed as a Helm chart, so you will need to
+initialize helm on your PKC cluster if you have not already done so.
 
-Boomi Data Services for PCF (PKS) is distributed as a Helm chart.  To install Helm on your PKS cluster, use the `initialize_helm_rbac.yaml` file contained in the Boomi Data Services for PCF (PKS) asset, downloaded from Pivotal Network.
+First, create a role for Helm/Tiller to use:
 
-    $ kubectl create -f initialize_helm_rbac.yaml
+    kubectl apply -f helm.yml
 
-    serviceaccount "tiller" created
-    clusterrolebinding.rbac.authorization.k8s.io "tiller" created
+Then, install the tiller pod onto your PKS cluster:
 
-This sets the necessary privileges for helm with a service account named tiller.
+    helm init --wait --service-account tiller --upgrade
 
-Initialize and upgrade helm with the command:
+###<a id="load-docker-images"> Loading Boomi Data Service Docker Images
 
-    $ helm init --wait --service-account tiller --upgrade
+Next, load up the Boomi Data Services container images, via an
+accessible and properly configured Docker daemon, by running:
 
-    $HELM_HOME has been configured at /<path>/.helm.
+    ./loadup name.of.registry.host/library
 
-    Tiller (the Helm server-side component) has been upgraded to the current version.
-    Happy Helming!
+This will import the container images into your default Docker
+daemon, re-tag them so that they can be pushed to your Container
+Image Registry, and then push them.
+
+This step must be repeated for each new version of Boomi Data Services.
+
+By default, images will be prefixed with `dell-boomi-` (i.e.,
+`dell-boomi-broker`, `dell-boomi-molecule`, etc.).  If you wish to change
+this, set the `PRE` environment variable to something appropriate before
+running the `loadup` script, and remember to update your Helm `values.yml`
+file.
+
+##<a id="deploy-helm-chart"></a> Deploy the Helm Chart
+
+To configure your Boomi Data Services installation, create a `values.yml`
+file.  At the very least, you will need to provide your Boomi account
+details and credentials.
+
+Here is an example `values.yml`, for a basic configuration, using
+PKS-provisioned NFS storage:
+
+    boomi:
+      username:     your-username
+      password:     your-password
+      account:      BOOMI-ACCOUNT
+      subaccounts:  COMMA,SEPARATED,SUB-ACCOUNTS,LIST
+      pollInterval: 10
+      environment:  your-atom-environment-name
+      cloud:        your-atom-cloud-name
+
+      nodes:        1
+
+    broker:
+      username: boomi
+      password: a-secret-password
+
+    cf:
+      api:                 https://api.sys.your.cloud.foundry
+      domain:              sys.your.cloud.foundry
+      route_client:        gorouter
+      route_client_secret: uaa-client-secret-for-gorouter
+      username:            admin
+      password:            uaa-client-secret-for-admin
+
+    image:
+      registry: name.of.registry.host/library
+
+Please refer to the <a href="configuration.html">Boomi Data Services
+Configuration Reference</a> for more information on how to configure more
+advanced use cases.
 
 
-##<a id="install-chart"></a> Configure and Install the Helm Chart
+    $ helm install --name boomi -f values.yml ./dell-boomi
 
-To configure the Helm chart, update the chart values, in `chart/values.yml`, setting your
-Boomi username, password, master account ID, and environment name.
-
-Then, install the Helm chart into your PKS cluster:
-
-    $ helm install --name boomi -f chart/values.yml  ./chart`
-
-
-Helm installs the new release into the Kubernetes default namespace specified in the
-current Kubernetes context. If you want to install into a different namespace, include
-the `--namespace` option in the `helm` command.
+Helm installs the new release into the current namespace.  To install into a
+different namespace, either switch to that namespace, or include the
+`--namespace` option in the `helm` command.
 
 After the deployment process completes, the following should appear in the terminal:
 
-    NAME:   boomi
-    LAST DEPLOYED: Wed Oct 31 14:12:41 2018
-    NAMESPACE: default
-    STATUS: DEPLOYED
+    NAME                                    READY  STATUS             RESTARTS  AGE
+    hopeful-warbler-dell-boomi-broker-687f845ffd-hzztr  0/2    Init:0/1           0         0s
+    hopeful-warbler-dell-boomi-molecule-0               0/1    ContainerCreating  0         0s
 
-    RESOURCES:
-    ==> v1/Secret
-    NAME                      AGE
-    boomi-dell-boomi  1s
+    NOTES:
+    Congratulations!  You know have a 1-node cluster,
+    running in the AtomSphere demo-cloud/demo-cloud environment.
 
-    ==> v1/Service
-    boomi-dell-boomi-broker   1s
-    boomi-dell-boomi-gateway  1s
+You now have a deployed Helm chart.
 
-    ==> v1beta2/Deployment
-    boomi-dell-boomi-broker    1s
-    boomi-dell-boomi-molecule  1s
+You can watch the installation progress by running:
 
-    ==> v1/Pod(related)
-
-    NAME                                        READY  STATUS             RESTARTS  AGE
-    boomi-dell-boomi-broker-6cc845c56f-mgqf8    0/1    ContainerCreating  0         1s
-    boomi-dell-boomi-molecule-74bbccb5fb-c5nj4  0/2    Init:0/1           0         1s
+    $ kubectl logs -l app=dell-boomi -l role=broker -c installer

@@ -5,7 +5,52 @@ owner: Partners
 
 These are release notes for Boomi Data Services for PCF (PKS) (Beta).
 
-##<a id="ver"></a> v0.2.0
+##<a id="v0.9.14"></a> v0.9.14
+
+**Release Date:** July 14, 2019
+
+Features included in this release:
+
+* **External NFS/NAS** - operators who wish to use their own NFS/NAS servers
+  to host the Boomi Molecule installation can now do so, by specifying their
+  _storage mode_ as `external`, and providing the details for reaching the
+  NFS/NAS endpoint (host/ip and volume path)
+
+* **Automounting of NFS Data Volumes** - operators can now specify a set of
+  data volume mountpoints that will be handled via the Linux automounter.
+  This allows processes deployed to the cluster to reference datasets from
+  outside the cluster, without introducing any undue dependencies on
+  third-party NFS/NAS/storage devices.
+
+* **Graceful Decommissioning** - when `molecule` pods are terminated, they
+  now initiate a graceful decommissioning shutdown of the molecule, properly
+  ejecting it from the cluster and avoiding head node leader election
+  problems.
+
+* **PCF Registration** is now baked in, but optional.  By default, your
+  Boomi Data Services Broker will be registered with the gorouter (and
+  advertise appropriate routes), and made available in the PCF services
+  marketplace.  This can be disabled for sites that want to control how this
+  registration and route mapping takes place.
+
+* **Private Docker Image Registries** are now supported, provided operators
+  have the credentials to give to the PKS cluster.
+
+* **Tolerances / Affinity / Node Selection** - the Helm chart for Boomi Data
+  Services now supports the standard fare for pod placement, using
+  industry-standard nomenclature.
+
+Issues fixed in this release:
+
+* All previous Known Issues have been patched in this release.
+
+Known issues:
+
+_none_.
+
+
+
+##<a id="v0.2.0"></a> v0.2.0
 
 **Release Date:** January 9, 2019
 
@@ -15,11 +60,12 @@ Features included in this release:
 * Broker Registration
 * Helm Chart Support
 
-Fixed issues in this release:
+Issues fixed in this release:
 
 * Atom installation race-conditions
 
-Known issues in this release:
+Known issues:
 
 * Automated CF Registration.
-* Multi-Atom Deployment, upstream NFS
+* It is not possible to use external NFS for ATOM_HOME.
+* Scaling down molecule nodes can lead to head node contention.
