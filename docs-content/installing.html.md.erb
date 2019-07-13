@@ -14,7 +14,7 @@ Pivotal Container Service (PKS).
 Boomi Data Services for PCF (PKS) is available for download from Pivotal Network.  It is
 distributed as a tarred, gzipped archive, named something like `dell-boomi-pks-<version>.tar.gz`.
 
-This archive contains all of the Kubernetes definition files, and Docker container images
+This archive contains all of the Kubernetes definition files and Docker container images
 that are needed to run Boomi Data Servies for PCF.
 
 To unpack the archive, use standard UNIX `tar` commands:
@@ -24,17 +24,17 @@ To unpack the archive, use standard UNIX `tar` commands:
 
 ##<a id="obtain-cluster-access"></a> Obtain Cluster Access
 
-A Pivotal Container Service (PKS) cluster is required to install Boomi Data Services for PCF.
+A PKS cluster is required to install Boomi Data Services for PCF (PKS).
 To obtain access to your cluster, do the following:
 
-  1. Log in to PKS: `pks login -a <pks-url> -u <username> -p <password> -k`
+  1. Login to PKS: `pks login -a <pks-url> -u <username> -p <password> -k`
   2. Update your `~/.kube/config`: `pks get-credentials <cluster-name>`
   3. Configure your Kubernetes client: `kubectl config use-context <cluster-name>`
 
 
 ##<a id="push-docker-images"></a> Push Docker Images
 
-Before you can instantiate the container images that comprise the Boomi Data Services for PCF,
+Before you can instantiate the container images that comprise the Boomi Data Services for PCF (PKS),
 they need to be loaded into a Docker Container Registry that is accessible to the PKS cluster.
 
 First, load the image files into your local Docker daemon:
@@ -66,7 +66,7 @@ Finally, tag those images and push them to your remote registry:
 
 ##<a id="install-helm"></a> Install Helm / Tiller
 
-Boomi Data Services for PCF is distributed as a Helm chart.  To install Helm on your PKS cluster, use the `initialize_helm_rbac.yaml` file contained in the Boomi Data Services for PCF (PKS) asset, downloaded from Pivotal Network.
+Boomi Data Services for PCF (PKS) is distributed as a Helm chart.  To install Helm on your PKS cluster, use the `initialize_helm_rbac.yaml` file contained in the Boomi Data Services for PCF (PKS) asset, downloaded from Pivotal Network.
 
     $ kubectl create -f initialize_helm_rbac.yaml
 
@@ -88,7 +88,7 @@ Initialize and upgrade helm with the command:
 ##<a id="install-chart"></a> Configure and Install the Helm Chart
 
 To configure the Helm chart, update the chart values, in `chart/values.yml`, setting your
-Boomi username, password, master account ID, and Environment name.
+Boomi username, password, master account ID, and environment name.
 
 Then, install the Helm chart into your PKS cluster:
 
