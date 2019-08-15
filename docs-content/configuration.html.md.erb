@@ -1,0 +1,524 @@
+---
+title: Configuring Boomi Data Services for PCF (PKS) on PKS
+owner: Partners
+---
+
+This topic describes how to configure Boomi Data Services for Pivotal Cloud
+Foundry (PCF) on Pivotal Container Service (PKS).
+
+## <a name="tasks"></a> Common Configuration Tasks
+
+This section details common configuration tasks you may want or need to
+undertake in your journey with Boomi Data Services.
+
+
+### <a name="credentials"></a> Configuring Boomi AtomSphere Credentials
+
+Your AtomSphere account, and a user for accessing the AtomSphere
+Platform, are configured under the `boomi:` heading in
+`values.yml`:
+
+    boomi:
+      username: you@you.ema.il
+      password: "it's.a.secret.to.everybody!"
+      account:  My-Boomi-ABCDEF
+      subaccounts: My-Boomi-subaccount1-GHIJKL
+
+Note that you may want to quote your password (as shown above) in
+case it contains any special characters (like `#`) that may trip
+up the YAML configuration format.
+
+### <a name="deploy-alternate-namespace"></a> Deploying to an Alternate Namespace
+
+If you want to deploy to an alternate Kubernetes namespace, make
+sure you either set your `kubectl` context ahead of time, or run
+`helm install` with the `--namespace` flag, like this:
+
+    helm install --namespace alt-boomi \
+	             ./dell-boomi -f values.yml
+
+### <a name="registration-with-pcf"></a> Registering with Pivotal Cloud Foundry
+
+By default, the Helm chart will register your Boomi Data Services
+Broker with your Pivotal Cloud Foundry installation, set up some
+routes for accessing the broker and deployed services, and
+integrate Boomi Data Services into your services marketplace.
+
+To do this, the following pieces of information are required:
+
+  1. A PCF API username / password, for broker registration
+  2. A routing client ID and secret, for route registration
+  3. A system domain
+  4. The Pivotal Cloud Foundry API endpoint
+
+Item (1) is set via the `cf.username` and `cf.password`
+configuration values:
+
+    cf:
+      username: admin
+      password: "ij2ush7aeC3loophain2ieso7OfaV0oo"
+
+Item (2) is set by the `cf.routingClient` and
+`cf.routingClientSecret` (which you should get from your PCF UAA
+administrator).
+
+    cf:
+      routingClient:       boomi-route-registrar
+      routingClientSecret: "noh0Ohcohruitai1Thees1ai"
+
+Items (3) and (4) are set, respectively, by the `cf.domain`, and
+`cf.api` configuration values:
+
+    cf:
+      api:    https://api.system.prod-cf.example.com
+      domain: system.prod-cf.example.com
+
+You may of course use a domain other than the PCF system domain,
+as long as your routing tier is properly configured and you are
+aware of the security implications.
+
+### <a name="skip-registration-with-pcf"></a> Skipping Registering with Pivotal Cloud Foundry
+
+If you are unable to register your Boomi Data Services Broker with
+your Pivotal Cloud Foundry installation, set the `cf.register`
+chart value to `no`:
+
+    cf:
+      register: no
+
+(by default, this is set to `yes`)
+
+The deployment will still feature a broker pod, since the broker
+is what performs the software installation for the clustered
+nodes.
+
+### <a name="proxies"></a> Running Boomi Data Services Behind HTTP(S) Proxies
+
+If you need to operate behind an HTTP/HTTPS proxy, you can set the
+following top-level properties in the `values.yml` file:
+
+    http_proxy:  'http://proxy.example.com:3128'
+	https_proxy: 'https://proxy.example.com:3128'
+	no_proxy:    .cf.local
+
+Should your proxy configuration require authentication, you can
+usually specify the username and password in the URL, according to
+RFC 3986 semantics (section 3.2.1.).  For example, assume that our
+proxy user is `bob`, and the password is `go100%/of/theway` -- to
+handle the presence of slashes and percent signs in the password,
+we have to encode the password component thusly:
+
+    http_proxy: 'https://bob:go100%25%2fof%2ftheway@proxy:8080'
+
+Note that `%` was expanded to `%25` (the hex ASCII value for the
+percent sign), and both forward slashes were likewise converted to
+their ASCII hex percent encoding, `%2f`>
+
+The proxy environment variables will be set for all pod containers
+that communicate with the outside world.
+
+### <a name="image-registry"></a> Using an Image Registry
+
+The Boomi Data Services for PCF (PKS) distribution contains the
+actual image files that are needed to run the system.  You will
+have to provide an OCI-compliant Image Registry to host those
+images, so that your PKS cluster can retrieve them.
+
+The Helm chart needs to know where you are hosting these images to
+properly configure PKS to retrieve them.  This is done via the
+`image.registry` configuration value:
+
+    image:
+      registry: harbor.pcf.prod1.example.com:8089/boomi
+
+As shown above, you can specify the port that the registry
+operates on, as well as an image directory (i.e. `boomi/`).
+This is the same value you will pass to the `./loadup` script,
+during installation:
+
+    $ ./loadup harbor.pcf.prod1.example.com:8089/boomi
+
+### <a name="private-image-registry"></a> Using a Private Image Registry
+
+For private Image Registries, that require authentication, you
+will first have to create a Kubernetes secret and then reference
+that in the `image.pullSecret` configuration value.
+
+See [the Kubernetes documentation][k-priv-reg] for more details.
+
+[k-priv-reg]: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+
+### <a name="external-nfs"></a> Using External NFS
+
+By default, the Boomi Data Services Helm chart attempts to
+provision a volume to install the Molecule Cloud onto.  If you
+already have a storage infrastructure and would like to make use
+of it (via NFS) you can use _external_ mode (see `storage.mode`)
+to hook up to a static, externally-managed volume.
+
+    storage:
+      mode:   external
+      server: nas32.example.com
+      path:   /filer1/boomi/prod2
+
+This will necessitate upgrading your pod containers to be
+privileged (which the Helm chart will do transparently), in order
+to allow them to create new mount points to the NFS storage, from
+inside the container.  There is no way around this security
+privilege escalation.
+
+### <a name="automount"></a> Automounting Data Volumes
+
+If you require the ability to mount data volumes for the deployed
+Boomi processes and workflows to operate on, you will need to make
+them available over NFS, and set them up as mountpoints managed by
+the Linux automounter.
+
+This allows the processes to access their volumes when they need,
+without needing to maintain a static mount all the time.  It also
+alleviates single points of failures related to tying your Boomi
+Data Services installation to multiple other storage systems.
+
+To configure automounted data volume support, use the
+`storage.autofs` configuration value.  Here is an example:
+
+    storage:
+      autofs: |
+        /data/vol1  -fstype=nfs  nas1:/etl/vol1
+        /data/vol2  -fstype=nfs  nas2:/etl/vol2
+
+Each molecule node will then be configured to mount these remote
+volumes, on-demand.  Failure of either `nas1` or `nas2` in this
+scenario will _not_ prevent Boomi Data Services from performing
+other work that does not require those volumes.
+
+As with external NFS, enabling automounted data volumes does
+require that the molecule container be privileged.  The Helm chart
+handles this requirement for you, transparently.
+
+## <a name="values-yml-reference"></a> `values.yml` Reference
+
+This section provides a comprehensive reference to all settings that can be
+tuned via the Helm `values.yml` file.  Settings are alphabetized for easy
+reference.
+
+- **boomi.account** (required)
+
+  The name of your Boomi AtomSphere account.
+
+  See also: `boomi.subaccounts`.
+
+- **boomi.cloud** (required)
+
+  A unique Boomi Molecule cloud name for this deployment.  This name
+  must be unique but need not be pre-configured in AtomSphere; the Helm
+  chart will create the cloud in AtomSphere if it is missing.
+
+- **boomi.debug**
+
+  A boolean flag that enables additional debugging output from the Boomi
+  Cloud Molecule, the service broker, and other related pieces of the
+  installation.
+
+  Defaults to `no` (off).
+
+  See also: `boomi.trace`.
+
+- **boomi.environment** (required)
+
+  A unique Boomi Molecule environment name for this deployment.  This name
+  must be unique but need not be pre-configured in AtomSphere; the Helm
+  chart will create the environment in AtomSphere if it is missing.
+
+- **boomi.nodes** (required)
+
+  The number of nodes to spin up inside of the Boomi Molecule.  Each node
+  occupies exactly one Kubernetes Pod in your PKS cluster.
+
+- **boomi.password** (required)
+
+  The password for the chosen Boomi AtomSphere user account.
+
+  See also: `boomi.username`.
+
+- **boomi.pollInterval** (optional)
+
+  How often (in minutes) to poll the Boomi AtomSphere API looking for new
+  integration packs to be made available, and subsequently refresh the
+  catalog of available services.
+
+  Defaults to `10` (minutes).
+
+- **boomi.subaccounts** (required)
+
+  A comma-separated list of Boomi Subaccounts that you wish to deploy
+  integration packs on behalf of.
+
+  See also: `boomi.account`.
+
+- **boomi.trace**
+
+  A boolean flag that enables trace-level debugging output from the Boomi
+  Cloud Molecule, the service broker, and other related pieces of the
+  installation.
+
+  Defaults to `no` (off).
+
+  See also: `boomi.debug`.
+
+- **boomi.username** (required)
+
+  Your Boomi AtomSphere user account name, for accessing the API.  You are
+  strongly encouraged to allocate a dedicated, standalone service user
+  account, to avoid lockouts and other issues.
+
+  See also: `boomi.password`.
+
+- **broker.password**
+
+  The password to configure the Boomi Data Services Broker with, for
+  protected communication with Pivotal Cloud Foundry.
+
+  Defaults to `boomi`.
+
+  See also: `broker.username`.
+
+- **broker.username**
+
+  The username to configure the Boomi Data Services Broker with, for
+  protected communication with Pivotal Cloud Foundry.
+
+  Defaults to `boomi`.
+
+  See also: `broker.password`.
+
+- **cf.api** (required)
+
+  The full URI (including the `https://` bits) of your Pivotal Cloud Foundry
+  API.  This will be used for registering the Boomi Data Services Broker
+  into the services marketplace.
+
+  This is required if `cf.register` is enabled.
+
+- **cf.domain** (required)
+
+  The System Domain of your Pivotal Cloud Foundry installation.  The routes
+  for the Boomi Data Services Broker, and the proxied route for deployed
+  services, will be registered under this domain.
+
+  This is required if `cf.register` is enabled.
+
+- **cf.password** (required)
+
+  The password of an account in Pivotal Cloud Foundry that has sufficient
+  access to register service brokers into the services marketplace.
+
+  This is required if `cf.register` is enabled.
+
+  See also: `cf.username`.
+
+- **cf.register**
+
+  A boolean flag that enables or disables registration of the Boomi Data
+  Services Broker with the Pivotal Cloud Foundry routing tier, and the
+  services marketplace.
+
+  Defaults to `yes` (perform registration)
+
+- **cf.routeClient** (required)
+
+  The Pivotal Cloud Foundry UAA Client ID to use for registering routes with
+  the PCF routing tier.
+
+  This is required if `cf.register` is enabled.
+
+  See also: `cf.routeClientSecret`.
+
+- **cf.routeClientSecret** (required)
+
+  The Pivotal Cloud Foundry UAA Client Secret to use for registering routes
+  with the PCF routing tier.
+
+  This is required if `cf.register` is enabled.
+
+  See also: `cf.routeClient`.
+
+- **cf.username**
+
+  The username of an account in Pivotal Cloud Foundry that has sufficient
+  access to register service brokers into the services marketplace.
+
+  This is required if `cf.register` is enabled.
+
+  See also: `cf.password`.
+
+- **http_proxy**
+
+  The full URI of your local networks' HTTP proxy for unencrypted traffic
+  (if you have one).  For authenticated proxies, the username and password
+  must be encoded according to RFC 3986 (specifically, section 3.2.1).
+
+  By default, no proxy is configured, and traffic will be sent directly to
+  HTTP endpoints as needed.
+
+  See also `https_proxy` and `no_proxy`.
+
+- **https_proxy**
+
+  The full URI of your local networks' HTTP proxy for encrypted traffic
+  (if you have one).  For authenticated proxies, the username and password
+  must be encoded according to RFC 3986 (specifically, section 3.2.1).
+
+  By default, no proxy is configured, and traffic will be sent directly to
+  HTTPS endpoints as needed.
+
+  See also `http_proxy` and `no_proxy`.
+
+- **image.registry** (required)
+
+  The hostname / IP (and optional repository path prefix) of the Docker
+  Image Registry where you are installing the Boomi Data Services images.
+
+- **image.prefix**
+
+  A prefix for Boomi Data Servicees image names.  You will probably not need
+  to change this from the default.  If you do, the value here must match the
+  value of `PRE` given to the `loadup` script during <a
+  href="installing.html#load-docker-images">installation</a>.
+
+  Defaults to `dell-boomi-`.  Note the trailing `-`.
+
+- **image.pullPolicy**
+
+  What strategy should PKS use when deciding on when to pull the contents of
+  an image.  Valid values are `Always`, and `IfNotPresent`.
+
+  Defaults to `Always`, which is usually the correct value, unless you
+  have specific need to avoid excess load on your Docker Image Registry
+  (at the expense of waiting for cache invalidation during upgrades).
+
+- **image.pullSecret**
+
+  If your Image Registry requires authentication, you can use the
+  Kubernetes secrets engine to house those credentials.  This
+  configuration value allows you to identify the name of the
+  `Secret` that contains those credentials.
+
+  If not specified, no authentication will be assumed (or applied)
+  when pulling images.
+
+- **image.tag**
+
+  The tag to use when retrieving images from the registry.  This is provided
+  for debugging and advanced use cases; you generally will not need to
+  change this.
+
+  Defaults to `latest`.
+
+- **no_proxy**
+
+  A comma-separated list of IP addresses, full domains, and partial domain
+  suffixes that are exempt from transiting the HTTP / HTTPS proxies, if they
+  exist.
+
+  See also `http_proxy` and `https_proxy`.
+
+- **rbac.create**
+
+  A boolean flag that controls whether or not the Helm chart for Boomi Data
+  Services also deploys a service account to use for certain introspection
+  tasks.  If you disable this (by setting it to `no`, for example), you will
+  need to provide a value for `rbac.serviceAccountName`.
+
+  Defaults to `yes` (RBAC machinery will be deployed alongside the rest of
+  the Helm chart).
+
+  See also `rbac.serviceAccountName` and `cf.register`.
+
+- **rbac.serviceAccountName**
+
+  The name of a PKS Service Account that should be used for Kubernetes API
+  access, when Boomi Data Services needs to introspect its own deployment.
+  This happens primarily when registering routes with Pivotal Cloud Foundry,
+  pursuant to the setting of `cf.register`.
+
+  See also `rbac.create` and `cf.register`.
+
+- **service.type**
+
+  The type of Kubernetes service to provision for handling traffic to the
+  Boomi Data Services Broker, and the deployed services on the molecule
+  component.
+
+  Defaults to `LoadBalancer`.
+
+- **storage.autofs**
+
+  If you have data volumes that you need your Boomi Data Services
+  installation to be able to access, as part of the process and
+  web service workflows you are deploying to it, you can set those
+  up via this configuration value.
+
+  This specifies the complete, direct map of Linux automounter
+  configuration, to be used on the `molecule` pods.
+
+  Here is an example, that mounts two volumes into `/data/...`:
+
+    storage:
+      autofs: |
+        /data/etl3  -fstype=nfs,ro    10.7.8.9:/nas/_filer1/etl3
+        /data/ftw   -fstype=nfs       172.16.31.99:/s/ee/whse1/ftw-prod
+
+  Any Boomi processes or workflows deployed to an installation
+  with that configuration will be able to seamlessly and
+  transparently access the `/data/etl3` and `/data/ftw` volumes,
+  remotely, and on-demand.  More importantly, failure of the
+  backing storage systems will not prevent the Boomi Data Services
+  installation from booting and performing any _other_ work.
+
+  For more details on the format of this key, see the Linux manual
+  page for autofs, `autofs(5)`.
+
+- **storage.mode**
+
+  Identifies how you wish to provision the shared storage component that the
+  Boomi Cloud Molecule nodes use for communication, data-sharing, and leader
+  election.
+
+  There are two acceptable values: `provisioned` and `external`.
+
+  In _provisioned_ mode, the Kubernetes cluster handles the NFS bits, and
+  mounts shared volumes into all pods as necessary.  This requires
+  first-class support for NFS-backed volumes in your PKS cluster.  You may
+  override the size of the provisioned volume via the `storage.size`
+  configuration value.
+
+  In _external_ mode, the pods themselves mount static, externally-hosted
+  NFS volumesm which you must configure with the `storage.server` and
+  `storage.path` configuration values.
+
+  Defaults to `provisioned`.
+
+- **storage.server**
+
+  The hostname (fully-qualified) or IP address of a remote NFS server.
+  In _external_ mode (see `storage.mode`), this is the server that will host
+  the Boomi Cloud Molecule installation volume.
+
+  See also `storage.mode` and `storage.path`.
+
+- **storage.path**
+
+  The remote path of the installation volume, for use in _external_ storage
+  mode (see `storage.mode`).  This volume must be accessible, in read-write
+  mode, to the PKS pod network.
+
+  See also `storage.mode` and `storage.server`.
+
+- **storage.size**
+
+  For _provisioned_ storage mode (see `storage.mode`), this determines the
+  size of the persistent volume that PKS will provision for the Boomi Cloud
+  Molecule installation disk.
+
+  Defaults to `2Gi`.

@@ -20,6 +20,8 @@ Boomi Data Services for PCF (PKS) includes the following key features:
 * Rolling updates via Helm.
 * Automated Service Broker Registration.
 * Multi-Deplyoment Multi-Tenancy via namespacing.
+* Support for K8S-Provisioned and External NAS/NFS
+* Support for automounted data volumes (over NFS)
 
 
 ## <a id="snapshot"></a>Product Snapshot
@@ -31,11 +33,11 @@ The following table provides version and version-support information about Boomi
     <th>Details</th>
     <tr>
         <td>Version</td>
-        <td>v0.2.0</td>
+        <td>v0.11.5</td>
     </tr>
     <tr>
         <td>Release date</td>
-        <td>January 9, 2019</td>
+        <td>August 15, 2019</td>
     </tr>
     <tr>
         <td>Software component version</td>
@@ -59,17 +61,11 @@ The following table provides version and version-support information about Boomi
 ## <a id="reqs"></a>Requirements
 Boomi Data Services for PCF (PKS) has the following requirements:
 
-+ kubectl
++ kubectl CLI
 
-+ helm
++ helm CLI
 
-+ local docker daemon
-
-## <a id="limitations"></a>Limitations
-
-+ Unautomated CF registration
-
-+ Molecule-Cloud
++ Access to a Docker daemon (for loading images into Kubernetes)
 
 ## <a id="feedback"></a>Feedback
 
