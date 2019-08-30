@@ -256,6 +256,15 @@ reference.
 
   See also: `boomi.account`.
 
+- **boomi.terminationWaitSeconds** (required)
+  
+  The time Kubernetes will wait for a node to shut down gracefully before it
+  kills the node forcefully.
+
+  Set this to a time (in seconds) that's longer than the longest running
+  batch job that, so that a node will always be able to finish its current
+  job before termination.
+
 - **boomi.trace**
 
   A boolean flag that enables trace-level debugging output from the Boomi

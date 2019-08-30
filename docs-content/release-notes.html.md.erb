@@ -4,6 +4,19 @@ owner: Partners
 ---
 
 These are release notes for Boomi Data Services for PCF (PKS) (Beta).
+##<a id="v0.11.7"></a> v0.11.7
+
+**Release Date:** August 30, 2019
+
+Features included in this release:
+
+* **Decom timout bug fixed** - There was a bug with the previous version
+  where Kubernetes could force close a node before it was done decomissioning
+  properly.  This is now fixed, and the timeout is configurable via a new
+  value in the Values.yml file `boomi.terminationWaitSeconds`
+
+* **Various other fixes and improvements** - This release also contains a
+  mix of other small bugfixes and improvements.
 
 ##<a id="v0.11.5"></a> v0.11.5
 
