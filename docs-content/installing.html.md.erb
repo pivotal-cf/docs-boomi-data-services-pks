@@ -1,21 +1,21 @@
 ---
-title: Installing Boomi Data Services for PCF (PKS) on PKS
+title: Installing Boomi Data Services for Pivotal Platform (PKS) on PKS
 owner: Partners
 ---
 
 
 
-This topic describes how to install Boomi Data Services for Pivotal Cloud Foundry (PCF) on
+This topic describes how to install Boomi Data Services for Pivotal Platform (Pivotal Platform) on
 Pivotal Container Service (PKS).
 
 
-##<a id="download"></a> Download Boomi Data Services for PCF (PKS)
+##<a id="download"></a> Download Boomi Data Services for Pivotal Platform (PKS)
 
-Boomi Data Services for PCF (PKS) is available for download from Pivotal Network.  It is
+Boomi Data Services for Pivotal Platform (PKS) is available for download from Pivotal Network.  It is
 distributed as a tarred, gzipped archive, named `dell-boomi-pks-<version>.tar.gz`.
 
 This archive contains all of the Kubernetes definition files and Docker container images
-that are needed to run Boomi Data Servies for PCF.
+that are needed to run Boomi Data Servies for Pivotal Platform.
 
 To unpack the archive, use standard UNIX `tar` commands:
 
@@ -24,7 +24,7 @@ To unpack the archive, use standard UNIX `tar` commands:
 
 ##<a id="obtain-cluster-access"></a> Obtain Cluster Access
 
-A PKS cluster is required to install Boomi Data Services for PCF (PKS).
+A PKS cluster is required to install Boomi Data Services for Pivotal Platform (PKS).
 To obtain access to your cluster, do the following:
 
   1. Login to PKS: `pks login -a <pks-url> -u <username> -p <password> -k`
@@ -44,7 +44,7 @@ To install, you will need the following:
   3. The Pivotal Application Service Tile (Cloud Foundry)
      installed to that Operations Manager.
 
-  4. A Docker Registry; the VMWare Harbor Registry Tile for PCF,
+  4. A Docker Registry; the VMWare Harbor Registry Tile for Pivotal Platform,
      installed via Operations Manager, will suffice.
 
   5. A PKS Cluster.

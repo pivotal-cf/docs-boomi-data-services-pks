@@ -1,10 +1,10 @@
 ---
-title: Configuring Boomi Data Services for PCF (PKS) on PKS
+title: Configuring Boomi Data Services for Pivotal Platform (PKS) on PKS
 owner: Partners
 ---
 
 This topic describes how to configure Boomi Data Services for Pivotal Cloud
-Foundry (PCF) on Pivotal Container Service (PKS).
+Foundry (Pivotal Platform) on Pivotal Container Service (PKS).
 
 ## <a name="tasks"></a> Common Configuration Tasks
 
@@ -37,19 +37,19 @@ sure you either set your `kubectl` context ahead of time, or run
     helm install --namespace alt-boomi \
 	             ./dell-boomi -f values.yml
 
-### <a name="registration-with-pcf"></a> Registering with Pivotal Cloud Foundry
+### <a name="registration-with-pcf"></a> Registering with Pivotal Platform
 
 By default, the Helm chart will register your Boomi Data Services
-Broker with your Pivotal Cloud Foundry installation, set up some
+Broker with your Pivotal Platform installation, set up some
 routes for accessing the broker and deployed services, and
 integrate Boomi Data Services into your services marketplace.
 
 To do this, the following pieces of information are required:
 
-  1. A PCF API username / password, for broker registration
+  1. A Pivotal Platform API username / password, for broker registration
   2. A routing client ID and secret, for route registration
   3. A system domain
-  4. The Pivotal Cloud Foundry API endpoint
+  4. The Pivotal Platform API endpoint
 
 Item (1) is set via the `cf.username` and `cf.password`
 configuration values:
@@ -59,7 +59,7 @@ configuration values:
       password: "ij2ush7aeC3loophain2ieso7OfaV0oo"
 
 Item (2) is set by the `cf.routingClient` and
-`cf.routingClientSecret` (which you should get from your PCF UAA
+`cf.routingClientSecret` (which you should get from your Pivotal Platform UAA
 administrator).
 
     cf:
@@ -73,14 +73,14 @@ Items (3) and (4) are set, respectively, by the `cf.domain`, and
       api:    https://api.system.prod-cf.example.com
       domain: system.prod-cf.example.com
 
-You may of course use a domain other than the PCF system domain,
+You may of course use a domain other than the Pivotal Platform system domain,
 as long as your routing tier is properly configured and you are
 aware of the security implications.
 
-### <a name="skip-registration-with-pcf"></a> Skipping Registering with Pivotal Cloud Foundry
+### <a name="skip-registration-with-pcf"></a> Skipping Registering with Pivotal Platform
 
 If you are unable to register your Boomi Data Services Broker with
-your Pivotal Cloud Foundry installation, set the `cf.register`
+your Pivotal Platform installation, set the `cf.register`
 chart value to `no`:
 
     cf:
@@ -119,7 +119,7 @@ that communicate with the outside world.
 
 ### <a name="image-registry"></a> Using an Image Registry
 
-The Boomi Data Services for PCF (PKS) distribution contains the
+The Boomi Data Services for Pivotal Platform (PKS) distribution contains the
 actual image files that are needed to run the system.  You will
 have to provide an OCI-compliant Image Registry to host those
 images, so that your PKS cluster can retrieve them.
@@ -286,7 +286,7 @@ reference.
 - **broker.password**
 
   The password to configure the Boomi Data Services Broker with, for
-  protected communication with Pivotal Cloud Foundry.
+  protected communication with Pivotal Platform.
 
   Defaults to `boomi`.
 
@@ -295,7 +295,7 @@ reference.
 - **broker.username**
 
   The username to configure the Boomi Data Services Broker with, for
-  protected communication with Pivotal Cloud Foundry.
+  protected communication with Pivotal Platform.
 
   Defaults to `boomi`.
 
@@ -303,7 +303,7 @@ reference.
 
 - **cf.api** (required)
 
-  The full URI (including the `https://` bits) of your Pivotal Cloud Foundry
+  The full URI (including the `https://` bits) of your Pivotal Platform
   API.  This will be used for registering the Boomi Data Services Broker
   into the services marketplace.
 
@@ -311,7 +311,7 @@ reference.
 
 - **cf.domain** (required)
 
-  The System Domain of your Pivotal Cloud Foundry installation.  The routes
+  The System Domain of your Pivotal Platform installation.  The routes
   for the Boomi Data Services Broker, and the proxied route for deployed
   services, will be registered under this domain.
 
@@ -319,7 +319,7 @@ reference.
 
 - **cf.password** (required)
 
-  The password of an account in Pivotal Cloud Foundry that has sufficient
+  The password of an account in Pivotal Platform that has sufficient
   access to register service brokers into the services marketplace.
 
   This is required if `cf.register` is enabled.
@@ -329,15 +329,15 @@ reference.
 - **cf.register**
 
   A boolean flag that enables or disables registration of the Boomi Data
-  Services Broker with the Pivotal Cloud Foundry routing tier, and the
+  Services Broker with the Pivotal Platform routing tier, and the
   services marketplace.
 
   Defaults to `yes` (perform registration)
 
 - **cf.routeClient** (required)
 
-  The Pivotal Cloud Foundry UAA Client ID to use for registering routes with
-  the PCF routing tier.
+  The Pivotal Platform UAA Client ID to use for registering routes with
+  the Pivotal Platform routing tier.
 
   This is required if `cf.register` is enabled.
 
@@ -345,8 +345,8 @@ reference.
 
 - **cf.routeClientSecret** (required)
 
-  The Pivotal Cloud Foundry UAA Client Secret to use for registering routes
-  with the PCF routing tier.
+  The Pivotal Platform UAA Client Secret to use for registering routes
+  with the Pivotal Platform routing tier.
 
   This is required if `cf.register` is enabled.
 
@@ -354,7 +354,7 @@ reference.
 
 - **cf.username**
 
-  The username of an account in Pivotal Cloud Foundry that has sufficient
+  The username of an account in Pivotal Platform that has sufficient
   access to register service brokers into the services marketplace.
 
   This is required if `cf.register` is enabled.
@@ -448,7 +448,7 @@ reference.
 
   The name of a PKS Service Account that should be used for Kubernetes API
   access, when Boomi Data Services needs to introspect its own deployment.
-  This happens primarily when registering routes with Pivotal Cloud Foundry,
+  This happens primarily when registering routes with Pivotal Platform,
   pursuant to the setting of `cf.register`.
 
   See also `rbac.create` and `cf.register`.
