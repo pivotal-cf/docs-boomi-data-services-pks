@@ -35,7 +35,7 @@ sure you either set your `kubectl` context ahead of time, or run
 `helm install` with the `--namespace` flag, like this:
 
     helm install --namespace alt-boomi \
-	             ./dell-boomi -f values.yml
+                 ./dell-boomi -f values.yml
 
 ### <a name="registration-with-pcf"></a> Registering with Pivotal Platform
 
@@ -160,12 +160,16 @@ to hook up to a static, externally-managed volume.
       mode:   external
       server: nas32.example.com
       path:   /filer1/boomi/prod2
+      nfsopt: rw    # etc.
 
 This will necessitate upgrading your pod containers to be
 privileged (which the Helm chart will do transparently), in order
 to allow them to create new mount points to the NFS storage, from
 inside the container.  There is no way around this security
 privilege escalation.
+
+The `nfsopt` parameter lets you specify additional options to the
+`mount` command, which will be passed via the `-o` option.
 
 ### <a name="automount"></a> Automounting Data Volumes
 
@@ -521,6 +525,13 @@ reference.
   The remote path of the installation volume, for use in _external_ storage
   mode (see `storage.mode`).  This volume must be accessible, in read-write
   mode, to the PKS pod network.
+
+  See also `storage.mode` and `storage.server`.
+
+- **storage.nfsopt**
+
+  An optional set of mount options (passed via `-o` to `mount`) for use in
+  _external_ storage mode (see `storage.mode`).
 
   See also `storage.mode` and `storage.server`.
 
