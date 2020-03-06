@@ -1,21 +1,21 @@
 ---
-title: Installing Boomi Data Services for Pivotal Platform (PKS) on PKS
+title: Installing Boomi Data Services for VMware Tanzu (PKS) on PKS
 owner: Partners
 ---
 
 
 
-This topic describes how to install Boomi Data Services for Pivotal Platform (Pivotal Platform) on
+This topic describes how to install Boomi Data Services for VMware Tanzu (VMware Tanzu) on
 Pivotal Container Service (PKS).
 
 
-##<a id="download"></a> Download Boomi Data Services for Pivotal Platform (PKS)
+##<a id="download"></a> Download Boomi Data Services for VMware Tanzu (PKS)
 
-Boomi Data Services for Pivotal Platform (PKS) is available for download from Pivotal Network.  It is
+Boomi Data Services for VMware Tanzu (PKS) is available for download from Pivotal Network.  It is
 distributed as a tarred, gzipped archive, named `dell-boomi-pks-<version>.tar.gz`.
 
 This archive contains all of the Kubernetes definition files and Docker container images
-that are needed to run Boomi Data Servies for Pivotal Platform.
+that are needed to run Boomi Data Servies for VMware Tanzu.
 
 To unpack the archive, use standard UNIX `tar` commands:
 
@@ -24,7 +24,7 @@ To unpack the archive, use standard UNIX `tar` commands:
 
 ##<a id="obtain-cluster-access"></a> Obtain Cluster Access
 
-A PKS cluster is required to install Boomi Data Services for Pivotal Platform (PKS).
+A PKS cluster is required to install Boomi Data Services for VMware Tanzu (PKS).
 To obtain access to your cluster, do the following:
 
   1. Login to PKS: `pks login -a <pks-url> -u <username> -p <password> -k`
@@ -41,10 +41,10 @@ To install, you will need the following:
   2. The Pivotal Container Service Tile installed to that
      Operations Manager.
 
-  3. The Pivotal Application Service Tile (Cloud Foundry)
+  3. The VMware Tanzu Application Service for VMs Tile (Cloud Foundry)
      installed to that Operations Manager.
 
-  4. A Docker Registry; the VMWare Harbor Registry Tile for Pivotal Platform,
+  4. A Docker Registry; the VMWare Harbor Registry Tile for VMware Tanzu,
      installed via Operations Manager, will suffice.
 
   5. A PKS Cluster.
