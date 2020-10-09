@@ -1,10 +1,10 @@
 ---
-title: Configuring Boomi Data Services for PCF (PKS) on PKS
+title: Configuring Boomi Data Services for VMware Tanzu on TKGI
 owner: Partners
 ---
 
-This topic describes how to configure Boomi Data Services for Pivotal Cloud
-Foundry (PCF) on Pivotal Container Service (PKS).
+This topic describes how to configure Boomi Data Services for VMware Tanzu on 
+Tanzu Kubernetes Grid Integrated (TKGI).
 
 ## <a name="tasks"></a> Common Configuration Tasks
 
@@ -37,19 +37,19 @@ sure you either set your `kubectl` context ahead of time, or run
     helm install --namespace alt-boomi \
 	             ./dell-boomi -f values.yml
 
-### <a name="registration-with-pcf"></a> Registering with Pivotal Cloud Foundry
+### <a name="registration-with-pcf"></a> Registering with VMware Tanzu
 
 By default, the Helm chart will register your Boomi Data Services
-Broker with your Pivotal Cloud Foundry installation, set up some
+Broker with your VMware Tanzu installation, set up some
 routes for accessing the broker and deployed services, and
 integrate Boomi Data Services into your services marketplace.
 
 To do this, the following pieces of information are required:
 
-  1. A PCF API username / password, for broker registration
+  1. A VMware Tanzu API username / password, for broker registration
   2. A routing client ID and secret, for route registration
   3. A system domain
-  4. The Pivotal Cloud Foundry API endpoint
+  4. The VMware Tanzu API endpoint
 
 Item (1) is set via the `cf.username` and `cf.password`
 configuration values:
@@ -59,7 +59,7 @@ configuration values:
       password: "ij2ush7aeC3loophain2ieso7OfaV0oo"
 
 Item (2) is set by the `cf.routingClient` and
-`cf.routingClientSecret` (which you should get from your PCF UAA
+`cf.routingClientSecret` (which you should get from your VMware Tanzu UAA
 administrator).
 
     cf:
@@ -73,14 +73,14 @@ Items (3) and (4) are set, respectively, by the `cf.domain`, and
       api:    https://api.system.prod-cf.example.com
       domain: system.prod-cf.example.com
 
-You may of course use a domain other than the PCF system domain,
+You may of course use a domain other than the VMware Tanzu system domain,
 as long as your routing tier is properly configured and you are
 aware of the security implications.
 
-### <a name="skip-registration-with-pcf"></a> Skipping Registering with Pivotal Cloud Foundry
+### <a name="skip-registration-with-pcf"></a> Skipping Registering with VMware Tanzu
 
 If you are unable to register your Boomi Data Services Broker with
-your Pivotal Cloud Foundry installation, set the `cf.register`
+your VMware Tanzu installation, set the `cf.register`
 chart value to `no`:
 
     cf:
@@ -119,13 +119,13 @@ that communicate with the outside world.
 
 ### <a name="image-registry"></a> Using an Image Registry
 
-The Boomi Data Services for PCF (PKS) distribution contains the
+The Boomi Data Services for VMware Tanzue (TKGI) distribution contains the
 actual image files that are needed to run the system.  You will
 have to provide an OCI-compliant Image Registry to host those
-images, so that your PKS cluster can retrieve them.
+images, so that your TKGI cluster can retrieve them.
 
 The Helm chart needs to know where you are hosting these images to
-properly configure PKS to retrieve them.  This is done via the
+properly configure TKGI to retrieve them. This is done via the
 `image.registry` configuration value:
 
     image:
@@ -166,6 +166,9 @@ privileged (which the Helm chart will do transparently), in order
 to allow them to create new mount points to the NFS storage, from
 inside the container.  There is no way around this security
 privilege escalation.
+
+The `nfsopt` parameter lets you specify additional options to the
+`mount` command, which will be passed via the `-o` option.
 
 ### <a name="automount"></a> Automounting Data Volumes
 
@@ -233,7 +236,7 @@ reference.
 - **boomi.nodes** (required)
 
   The number of nodes to spin up inside of the Boomi Molecule.  Each node
-  occupies exactly one Kubernetes Pod in your PKS cluster.
+  occupies exactly one Kubernetes Pod in your TKGI cluster.
 
 - **boomi.password** (required)
 
@@ -286,7 +289,7 @@ reference.
 - **broker.password**
 
   The password to configure the Boomi Data Services Broker with, for
-  protected communication with Pivotal Cloud Foundry.
+  protected communication with VMware Tanzu.
 
   Defaults to `boomi`.
 
@@ -295,7 +298,7 @@ reference.
 - **broker.username**
 
   The username to configure the Boomi Data Services Broker with, for
-  protected communication with Pivotal Cloud Foundry.
+  protected communication with VMware Tanzu.
 
   Defaults to `boomi`.
 
@@ -303,7 +306,7 @@ reference.
 
 - **cf.api** (required)
 
-  The full URI (including the `https://` bits) of your Pivotal Cloud Foundry
+  The full URI (including the `https://` bits) of your VMware Tanzu
   API.  This will be used for registering the Boomi Data Services Broker
   into the services marketplace.
 
@@ -311,7 +314,7 @@ reference.
 
 - **cf.domain** (required)
 
-  The System Domain of your Pivotal Cloud Foundry installation.  The routes
+  The System Domain of your VMware Tanzu installation.  The routes
   for the Boomi Data Services Broker, and the proxied route for deployed
   services, will be registered under this domain.
 
@@ -319,7 +322,7 @@ reference.
 
 - **cf.password** (required)
 
-  The password of an account in Pivotal Cloud Foundry that has sufficient
+  The password of an account in VMware Tanzu that has sufficient
   access to register service brokers into the services marketplace.
 
   This is required if `cf.register` is enabled.
@@ -329,15 +332,15 @@ reference.
 - **cf.register**
 
   A boolean flag that enables or disables registration of the Boomi Data
-  Services Broker with the Pivotal Cloud Foundry routing tier, and the
+  Services Broker with the VMware Tanzu routing tier, and the
   services marketplace.
 
   Defaults to `yes` (perform registration)
 
 - **cf.routeClient** (required)
 
-  The Pivotal Cloud Foundry UAA Client ID to use for registering routes with
-  the PCF routing tier.
+  The VMware Tanzu UAA Client ID to use for registering routes with
+  the TAS routing tier.
 
   This is required if `cf.register` is enabled.
 
@@ -345,8 +348,8 @@ reference.
 
 - **cf.routeClientSecret** (required)
 
-  The Pivotal Cloud Foundry UAA Client Secret to use for registering routes
-  with the PCF routing tier.
+  The VMware Tanzu UAA Client Secret to use for registering routes
+  with the TAS routing tier.
 
   This is required if `cf.register` is enabled.
 
@@ -354,7 +357,7 @@ reference.
 
 - **cf.username**
 
-  The username of an account in Pivotal Cloud Foundry that has sufficient
+  The username of an account in VMware Tanzu that has sufficient
   access to register service brokers into the services marketplace.
 
   This is required if `cf.register` is enabled.
@@ -399,7 +402,7 @@ reference.
 
 - **image.pullPolicy**
 
-  What strategy should PKS use when deciding on when to pull the contents of
+  What strategy should TKGI use when deciding on when to pull the contents of
   an image.  Valid values are `Always`, and `IfNotPresent`.
 
   Defaults to `Always`, which is usually the correct value, unless you
@@ -446,9 +449,9 @@ reference.
 
 - **rbac.serviceAccountName**
 
-  The name of a PKS Service Account that should be used for Kubernetes API
+  The name of a TKGI Service Account that should be used for Kubernetes API
   access, when Boomi Data Services needs to introspect its own deployment.
-  This happens primarily when registering routes with Pivotal Cloud Foundry,
+  This happens primarily when registering routes with VMware Tanzu,
   pursuant to the setting of `cf.register`.
 
   See also `rbac.create` and `cf.register`.
@@ -498,7 +501,7 @@ reference.
 
   In _provisioned_ mode, the Kubernetes cluster handles the NFS bits, and
   mounts shared volumes into all pods as necessary.  This requires
-  first-class support for NFS-backed volumes in your PKS cluster.  You may
+  first-class support for NFS-backed volumes in your TKGI cluster.  You may
   override the size of the provisioned volume via the `storage.size`
   configuration value.
 
@@ -520,14 +523,21 @@ reference.
 
   The remote path of the installation volume, for use in _external_ storage
   mode (see `storage.mode`).  This volume must be accessible, in read-write
-  mode, to the PKS pod network.
+  mode, to the TKGI pod network.
+
+  See also `storage.mode` and `storage.server`.
+
+- **storage.nfsopt**
+
+  An optional set of mount options (passed via `-o` to `mount`) for use in
+  _external_ storage mode (see `storage.mode`).
 
   See also `storage.mode` and `storage.server`.
 
 - **storage.size**
 
   For _provisioned_ storage mode (see `storage.mode`), this determines the
-  size of the persistent volume that PKS will provision for the Boomi Cloud
+  size of the persistent volume that TKGI will provision for the Boomi Cloud
   Molecule installation disk.
 
   Defaults to `2Gi`.
