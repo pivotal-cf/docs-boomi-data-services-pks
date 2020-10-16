@@ -1,18 +1,19 @@
 ---
-title: Installing Boomi Data Services for VMware Tanzu (PKS) on PKS
+title: Installing Boomi Data Services for VMware Tanzu (TKGI)
 owner: Partners
 ---
 
 
 
-This topic describes how to install Boomi Data Services for VMware Tanzu (VMware Tanzu) on
-Pivotal Container Service (PKS).
+This topic describes how to install Boomi Data Services for VMware Tanzu on
+VMware Tanzu Kubernetes Grid Integrated (TKGI).
 
 
-##<a id="download"></a> Download Boomi Data Services for VMware Tanzu (PKS)
+##<a id="download"></a> Download Boomi Data Services for VMware Tanzu (TKGI)
 
-Boomi Data Services for VMware Tanzu (PKS) is available for download from Pivotal Network.  It is
-distributed as a tarred, gzipped archive, named `dell-boomi-pks-<version>.tar.gz`.
+Boomi Data Services for VMware Tanzu (TKGI) is available for download from the 
+VMware Tanzu Network. It is distributed as a tarred, gzipped archive, named 
+`dell-boomi-pks-<version>.tar.gz`.
 
 This archive contains all of the Kubernetes definition files and Docker container images
 that are needed to run Boomi Data Servies for VMware Tanzu.
@@ -24,11 +25,11 @@ To unpack the archive, use standard UNIX `tar` commands:
 
 ##<a id="obtain-cluster-access"></a> Obtain Cluster Access
 
-A PKS cluster is required to install Boomi Data Services for VMware Tanzu (PKS).
-To obtain access to your cluster, do the following:
+A VMware TKGI cluster is required to install Boomi Data Services for
+VMware Tanzu (TKGI). To obtain access to your cluster, do the following:
 
-  1. Login to PKS: `pks login -a <pks-url> -u <username> -p <password> -k`
-  2. Update your `~/.kube/config`: `pks get-credentials <cluster-name>`
+  1. Login to VMware TKGI: `tkgi login -a <tkgi-url> -u <username> -p <password> -k`
+  2. Update your `~/.kube/config`: `tkgi get-credentials <cluster-name>`
   3. Configure your Kubernetes client: `kubectl config use-context <cluster-name>`
 
 
@@ -36,9 +37,9 @@ To obtain access to your cluster, do the following:
 
 To install, you will need the following:
 
-  1. A Pivotal Operations Manager instance
+  1. A VMware Tanzu Operations Manager instance
 
-  2. The Pivotal Container Service Tile installed to that
+  2. The VMware Tanzu Kubernetes Grid Integrated Service Tile installed to that
      Operations Manager.
 
   3. The VMware Tanzu Application Service for VMs Tile (Cloud Foundry)
@@ -47,20 +48,20 @@ To install, you will need the following:
   4. A Docker Registry; the VMWare Harbor Registry Tile for VMware Tanzu,
      installed via Operations Manager, will suffice.
 
-  5. A PKS Cluster.
+  5. A TKGI Cluster.
 
   6. A configured `kubectl` environment.
 
 ###<a id="install-helm"> Installing Helm/Tiller (with RBAC)
 
 Boomi Data Services is distributed as a Helm chart, so you will need to
-initialize helm on your PKC cluster if you have not already done so.
+initialize helm on your TKGI cluster if you have not already done so.
 
 First, create a role for Helm/Tiller to use:
 
     kubectl apply -f helm.yml
 
-Then, install the tiller pod onto your PKS cluster:
+Then, install the tiller pod onto your TKGI cluster:
 
     helm init --wait --service-account tiller --upgrade
 
@@ -90,7 +91,7 @@ file.  At the very least, you will need to provide your Boomi account
 details and credentials.
 
 Here is an example `values.yml`, for a basic configuration, using
-PKS-provisioned NFS storage:
+TKGI-provisioned NFS storage:
 
     boomi:
       username:     your-username
