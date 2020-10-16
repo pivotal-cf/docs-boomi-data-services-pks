@@ -1,9 +1,27 @@
 ---
-title: Release Notes for Boomi Data Services for VMware Tanzu (PKS) (Beta)
+title: Release Notes for Boomi Data Services for VMware Tanzu (TKGI)
 owner: Partners
 ---
 
-These are release notes for Boomi Data Services for VMware Tanzu (PKS) (Beta).
+These are release notes for Boomi Data Services for VMware Tanzu (TKGI).
+##<a id="v0.11.11"></a> v0.11.11
+
+**Release Date:** October 8, 2020
+
+Features included in this release:
+
+* **Broker Optional** - Makes the Broker optional, broker is not installed unless
+  the broker options are configured.
+
+* **Override Properties** - allow parameters to be passed to atom.vmoptions and
+  container.properties. Eliminates duplication of configuration parameters.
+
+* **Improve Pod Persistence** - prevent pods from being terminated during atom
+  worker restarts.
+
+* **Various other fixes and improvements** - This release also contains a mix 
+  of other small bugfixes and improvements.
+
 ##<a id="v0.11.9"></a> v0.11.9
 
 **Release Date:** December 2, 2019
@@ -57,7 +75,7 @@ Features included in this release:
   registration and route mapping takes place.
 
 * **Private Docker Image Registries** are now supported, provided operators
-  have the credentials to give to the PKS cluster.
+  have the credentials to give to the TKGI cluster.
 
 * **Tolerances / Affinity / Node Selection** - the Helm chart for Boomi Data
   Services now supports the standard fare for pod placement, using
@@ -70,8 +88,6 @@ Issues fixed in this release:
 Known issues:
 
 _none_.
-
-
 
 ##<a id="v0.2.0"></a> v0.2.0
 

@@ -1,10 +1,10 @@
 ---
-title: Configuring Boomi Data Services for VMware Tanzu (PKS) on PKS
+title: Configuring Boomi Data Services for VMware Tanzu on TKGI
 owner: Partners
 ---
 
-This topic describes how to configure Boomi Data Services for Pivotal Cloud
-Foundry (VMware Tanzu) on Pivotal Container Service (PKS).
+This topic describes how to configure Boomi Data Services for VMware Tanzu 
+Kubernetes Grid Integrated (TKGI).
 
 ## <a name="tasks"></a> Common Configuration Tasks
 
@@ -34,8 +34,7 @@ If you want to deploy to an alternate Kubernetes namespace, make
 sure you either set your `kubectl` context ahead of time, or run
 `helm install` with the `--namespace` flag, like this:
 
-    helm install --namespace alt-boomi \
-                 ./dell-boomi -f values.yml
+    helm install --namespace alt-boomi ./dell-boomi -f values.yml
 
 ### <a name="registration-with-pcf"></a> Registering with VMware Tanzu
 
@@ -119,13 +118,13 @@ that communicate with the outside world.
 
 ### <a name="image-registry"></a> Using an Image Registry
 
-The Boomi Data Services for VMware Tanzu (PKS) distribution contains the
+The Boomi Data Services for VMware Tanzu (TKGI) distribution contains the
 actual image files that are needed to run the system.  You will
 have to provide an OCI-compliant Image Registry to host those
-images, so that your PKS cluster can retrieve them.
+images, so that your TKGI cluster can retrieve them.
 
 The Helm chart needs to know where you are hosting these images to
-properly configure PKS to retrieve them.  This is done via the
+properly configure TKGI to retrieve them. This is done via the
 `image.registry` configuration value:
 
     image:
@@ -237,7 +236,7 @@ reference.
 - **boomi.nodes** (required)
 
   The number of nodes to spin up inside of the Boomi Molecule.  Each node
-  occupies exactly one Kubernetes Pod in your PKS cluster.
+  occupies exactly one Kubernetes Pod in your TKGI cluster.
 
 - **boomi.password** (required)
 
@@ -341,7 +340,7 @@ reference.
 - **cf.routeClient** (required)
 
   The VMware Tanzu UAA Client ID to use for registering routes with
-  the VMware Tanzu routing tier.
+  the TAS routing tier.
 
   This is required if `cf.register` is enabled.
 
@@ -350,7 +349,7 @@ reference.
 - **cf.routeClientSecret** (required)
 
   The VMware Tanzu UAA Client Secret to use for registering routes
-  with the VMware Tanzu routing tier.
+  with the TAS routing tier.
 
   This is required if `cf.register` is enabled.
 
@@ -403,7 +402,7 @@ reference.
 
 - **image.pullPolicy**
 
-  What strategy should PKS use when deciding on when to pull the contents of
+  What strategy should TKGI use when deciding on when to pull the contents of
   an image.  Valid values are `Always`, and `IfNotPresent`.
 
   Defaults to `Always`, which is usually the correct value, unless you
@@ -450,7 +449,7 @@ reference.
 
 - **rbac.serviceAccountName**
 
-  The name of a PKS Service Account that should be used for Kubernetes API
+  The name of a TKGI Service Account that should be used for Kubernetes API
   access, when Boomi Data Services needs to introspect its own deployment.
   This happens primarily when registering routes with VMware Tanzu,
   pursuant to the setting of `cf.register`.
@@ -502,7 +501,7 @@ reference.
 
   In _provisioned_ mode, the Kubernetes cluster handles the NFS bits, and
   mounts shared volumes into all pods as necessary.  This requires
-  first-class support for NFS-backed volumes in your PKS cluster.  You may
+  first-class support for NFS-backed volumes in your TKGI cluster.  You may
   override the size of the provisioned volume via the `storage.size`
   configuration value.
 
@@ -524,7 +523,7 @@ reference.
 
   The remote path of the installation volume, for use in _external_ storage
   mode (see `storage.mode`).  This volume must be accessible, in read-write
-  mode, to the PKS pod network.
+  mode, to the TKGI pod network.
 
   See also `storage.mode` and `storage.server`.
 
@@ -538,7 +537,7 @@ reference.
 - **storage.size**
 
   For _provisioned_ storage mode (see `storage.mode`), this determines the
-  size of the persistent volume that PKS will provision for the Boomi Cloud
+  size of the persistent volume that TKGI will provision for the Boomi Cloud
   Molecule installation disk.
 
   Defaults to `2Gi`.
