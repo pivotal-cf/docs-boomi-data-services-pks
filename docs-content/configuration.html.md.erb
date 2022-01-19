@@ -96,35 +96,46 @@ nodes.
 If you need to operate behind an HTTP/HTTPS proxy, you can set the
 following top-level properties in the `values.yml` file:
 
-    http_proxy:  'http://proxy.example.com:3128'
-	https_proxy: 'https://proxy.example.com:3128'
-	no_proxy:    .cf.local
+    proxy_host:  'proxy.example.com'
+    proxy_port: '3128'
+    proxy_username: 'fred'
+    proxy_password: 'pickles'
+    no_proxy:    .cf.local
 
-Should your proxy configuration require authentication, you can
-usually specify the username and password in the URL, according to
-RFC 3986 semantics (section 3.2.1.).  For example, assume that our
-proxy user is `bob`, and the password is `go100%/of/theway` -- to
-handle the presence of slashes and percent signs in the password,
-we have to encode the password component thusly:
+Internally, these parts will be combined into a URL that is used to direct
+traffic through a proxy.
 
-    http_proxy: 'https://bob:go100%25%2fof%2ftheway@proxy:8080'
+    http_proxy='http://fred:pickles@proxy.example.com:8080
+
+The use of special characters in passwords can be problematic in a URL. If these
+cannot be avoided it is important to encode those characters as described by
+RFC 3986 semantics (section 3.2.1.).  For example, assume that our proxy user is
+`bob`, and the password is `go100%/of/theway` -- to handle the presence of
+slashes and percent signs in the password, we have to encode the password
+component thusly:
+
+    proxy_password: 'go100%25%2fof%2ftheway'
+
+Which results in a generated URL of:
+
+    https_proxy='https://bob:go100%25%2fof%2ftheway@proxy.example.com:8080'
 
 Note that `%` was expanded to `%25` (the hex ASCII value for the
 percent sign), and both forward slashes were likewise converted to
-their ASCII hex percent encoding, `%2f`>
+their ASCII hex percent encoding, `%2f`.
 
 The proxy environment variables will be set for all pod containers
 that communicate with the outside world.
 
 ### <a name="image-registry"></a> Using an Image Registry
 
-The Boomi Data Services for VMware Tanzu (TKGI) distribution contains the
-actual image files that are needed to run the system.  You will
-have to provide an OCI-compliant Image Registry to host those
-images, so that your TKGI cluster can retrieve them.
+The Boomi Data Services for Tanzu Kubernetes Grid Integrated (TKGI)
+distribution contains the actual image files that are needed to run
+the system.  You will have to provide an OCI-compliant Image Registry
+to host those images, so that your TKGI cluster can retrieve them.
 
 The Helm chart needs to know where you are hosting these images to
-properly configure TKGI to retrieve them. This is done via the
+properly configure TKGI to retrieve them.  This is done via the
 `image.registry` configuration value:
 
     image:
@@ -137,6 +148,10 @@ during installation:
 
     $ ./loadup harbor.pcf.prod1.example.com:8089/boomi
 
+If you are using a molecule/atom install only, you can use the
+`./loadup-molecule` script in place of `./loadup` to avoid loading
+unneeded images to your registry.
+
 ### <a name="private-image-registry"></a> Using a Private Image Registry
 
 For private Image Registries, that require authentication, you
@@ -146,58 +161,6 @@ that in the `image.pullSecret` configuration value.
 See [the Kubernetes documentation][k-priv-reg] for more details.
 
 [k-priv-reg]: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
-
-### <a name="external-nfs"></a> Using External NFS
-
-By default, the Boomi Data Services Helm chart attempts to
-provision a volume to install the Molecule Cloud onto.  If you
-already have a storage infrastructure and would like to make use
-of it (via NFS) you can use _external_ mode (see `storage.mode`)
-to hook up to a static, externally-managed volume.
-
-    storage:
-      mode:   external
-      server: nas32.example.com
-      path:   /filer1/boomi/prod2
-      nfsopt: rw    # etc.
-
-This will necessitate upgrading your pod containers to be
-privileged (which the Helm chart will do transparently), in order
-to allow them to create new mount points to the NFS storage, from
-inside the container.  There is no way around this security
-privilege escalation.
-
-The `nfsopt` parameter lets you specify additional options to the
-`mount` command, which will be passed via the `-o` option.
-
-### <a name="automount"></a> Automounting Data Volumes
-
-If you require the ability to mount data volumes for the deployed
-Boomi processes and workflows to operate on, you will need to make
-them available over NFS, and set them up as mountpoints managed by
-the Linux automounter.
-
-This allows the processes to access their volumes when they need,
-without needing to maintain a static mount all the time.  It also
-alleviates single points of failures related to tying your Boomi
-Data Services installation to multiple other storage systems.
-
-To configure automounted data volume support, use the
-`storage.autofs` configuration value.  Here is an example:
-
-    storage:
-      autofs: |
-        /data/vol1  -fstype=nfs  nas1:/etl/vol1
-        /data/vol2  -fstype=nfs  nas2:/etl/vol2
-
-Each molecule node will then be configured to mount these remote
-volumes, on-demand.  Failure of either `nas1` or `nas2` in this
-scenario will _not_ prevent Boomi Data Services from performing
-other work that does not require those volumes.
-
-As with external NFS, enabling automounted data volumes does
-require that the molecule container be privileged.  The Helm chart
-handles this requirement for you, transparently.
 
 ## <a name="values-yml-reference"></a> `values.yml` Reference
 
@@ -211,11 +174,15 @@ reference.
 
   See also: `boomi.subaccounts`.
 
-- **boomi.cloud** (required)
+- **boomi.atomName** (required)
 
-  A unique Boomi Molecule cloud name for this deployment.  This name
-  must be unique but need not be pre-configured in AtomSphere; the Helm
-  chart will create the cloud in AtomSphere if it is missing.
+  A Boomi Atom Cloud Name for this deployment. This name should be unique to
+  simplify identification in AtomSphere
+
+- **boomi.cloudId** (required)
+
+  A unique Boomi Molecule cloud id for this deployment.  This id
+  must be unique and must be pre-configured in AtomSphere.
 
 - **boomi.debug**
 
@@ -223,20 +190,33 @@ reference.
   Cloud Molecule, the service broker, and other related pieces of the
   installation.
 
+  Only the values `yes` and `no` (both quoted) will be honored:
+
+      boomi:
+        debug: "yes"
+
   Defaults to `no` (off).
 
   See also: `boomi.trace`.
 
-- **boomi.environment** (required)
+- **boomi.environmentId**
 
-  A unique Boomi Molecule environment name for this deployment.  This name
-  must be unique but need not be pre-configured in AtomSphere; the Helm
-  chart will create the environment in AtomSphere if it is missing.
+  The ID of the environment that this cloud should be attached to in AtomSphere.
+  If not specified, the Cloud will be in the Unattached Atoms list in Atom
+  Management.
 
 - **boomi.nodes** (required)
 
   The number of nodes to spin up inside of the Boomi Molecule.  Each node
   occupies exactly one Kubernetes Pod in your TKGI cluster.
+
+- **boomi.username** (required)
+
+  Your Boomi AtomSphere user account name, for accessing the API.  You are
+  strongly encouraged to allocate a dedicated, standalone service user
+  account, to avoid lockouts and other issues.
+
+  See also: `boomi.password`.
 
 - **boomi.password** (required)
 
@@ -259,14 +239,29 @@ reference.
 
   See also: `boomi.account`.
 
-- **boomi.terminationWaitSeconds** (required)
-  
-  The time Kubernetes will wait for a node to shut down gracefully before it
-  kills the node forcefully.
+- **boomi.containerProperties** (optional)
 
-  Set this to a time (in seconds) that's longer than the longest running
-  batch job that, so that a node will always be able to finish its current
-  job before termination.
+  If you need to add additional Boomi configuration options to the 
+  container.properties file these can be added through this parameter. Any
+  values entered here will be added to the existing container.properties.
+
+  To use, add parameters as a pipe `|` delimieted variable with no extra
+  whitespace. For example:
+
+      boomi:
+        containerProperties: com.boomi.container.purgeDays=45|com.boomi.container.multiTenant=true
+
+- **boomi.atomVmoptions** (optional)
+
+  If you need to add additional Boomi VM configuration options to the
+  atom.vmoptions file these can be added through this parameter. Any values
+  entered here will append to the existing container.properties.
+
+  To use, add parameters as a pipe `|` delimieted variable with no extra
+  whitespace. For example:
+
+      boomi:
+        atomVmoptions: -Xmx1024m|-Dsun.net.client.defaultReadTimeout=5000
 
 - **boomi.trace**
 
@@ -274,22 +269,19 @@ reference.
   Cloud Molecule, the service broker, and other related pieces of the
   installation.
 
+  Only the values `yes` and `no` (both quoted) will be honored:
+
+      boomi:
+        trace: "yes"
+
   Defaults to `no` (off).
 
   See also: `boomi.debug`.
 
-- **boomi.username** (required)
-
-  Your Boomi AtomSphere user account name, for accessing the API.  You are
-  strongly encouraged to allocate a dedicated, standalone service user
-  account, to avoid lockouts and other issues.
-
-  See also: `boomi.password`.
-
 - **broker.password**
 
   The password to configure the Boomi Data Services Broker with, for
-  protected communication with VMware Tanzu.
+  protected communication with Tanzu Cloud Foundry.
 
   Defaults to `boomi`.
 
@@ -298,7 +290,7 @@ reference.
 - **broker.username**
 
   The username to configure the Boomi Data Services Broker with, for
-  protected communication with VMware Tanzu.
+  protected communication with Tanzu Cloud Foundry.
 
   Defaults to `boomi`.
 
@@ -306,7 +298,7 @@ reference.
 
 - **cf.api** (required)
 
-  The full URI (including the `https://` bits) of your VMware Tanzu
+  The full URI (including the `https://` bits) of your Tanzu Cloud Foundry
   API.  This will be used for registering the Boomi Data Services Broker
   into the services marketplace.
 
@@ -314,7 +306,7 @@ reference.
 
 - **cf.domain** (required)
 
-  The System Domain of your VMware Tanzu installation.  The routes
+  The System Domain of your Tanzu Cloud Foundry installation.  The routes
   for the Boomi Data Services Broker, and the proxied route for deployed
   services, will be registered under this domain.
 
@@ -322,7 +314,7 @@ reference.
 
 - **cf.password** (required)
 
-  The password of an account in VMware Tanzu that has sufficient
+  The password of an account in Tanzu Cloud Foundry that has sufficient
   access to register service brokers into the services marketplace.
 
   This is required if `cf.register` is enabled.
@@ -332,15 +324,15 @@ reference.
 - **cf.register**
 
   A boolean flag that enables or disables registration of the Boomi Data
-  Services Broker with the VMware Tanzu routing tier, and the
+  Services Broker with the Tanzu Cloud Foundry routing tier, and the
   services marketplace.
 
   Defaults to `yes` (perform registration)
 
 - **cf.routeClient** (required)
 
-  The VMware Tanzu UAA Client ID to use for registering routes with
-  the TAS routing tier.
+  The Tanzu Cloud Foundry UAA Client ID to use for registering routes with
+  the Tanzu CF routing tier.
 
   This is required if `cf.register` is enabled.
 
@@ -348,8 +340,8 @@ reference.
 
 - **cf.routeClientSecret** (required)
 
-  The VMware Tanzu UAA Client Secret to use for registering routes
-  with the TAS routing tier.
+  The Tanzu Cloud Foundry UAA Client Secret to use for registering routes
+  with the Tanzu CF routing tier.
 
   This is required if `cf.register` is enabled.
 
@@ -357,34 +349,43 @@ reference.
 
 - **cf.username**
 
-  The username of an account in VMware Tanzu that has sufficient
+  The username of an account in Tanzu Cloud Foundry that has sufficient
   access to register service brokers into the services marketplace.
 
   This is required if `cf.register` is enabled.
 
   See also: `cf.password`.
 
-- **http_proxy**
+- **proxy_host**
 
-  The full URI of your local networks' HTTP proxy for unencrypted traffic
-  (if you have one).  For authenticated proxies, the username and password
-  must be encoded according to RFC 3986 (specifically, section 3.2.1).
+  The hostname of your local networks' HTTP/HTTPS proxy for unencrypted traffic
+  (if you have one). Provide host, port, user, and password information separately.
 
-  By default, no proxy is configured, and traffic will be sent directly to
-  HTTP endpoints as needed.
+  See also `proxy_port`, `proxy_username`, and `proxy_password`
 
-  See also `https_proxy` and `no_proxy`.
+- **proxy_port**
 
-- **https_proxy**
+  The port of your local networks' HTTP/HTTPS proxy for unencrypted traffic
+  (if you have one). Provide host, port, user, and password information separately.
+  If you specify a proxy port you must also provide a proxy host.
 
-  The full URI of your local networks' HTTP proxy for encrypted traffic
-  (if you have one).  For authenticated proxies, the username and password
-  must be encoded according to RFC 3986 (specifically, section 3.2.1).
+  See also `proxy_host`, `proxy_username`, and `proxy_password`
 
-  By default, no proxy is configured, and traffic will be sent directly to
-  HTTPS endpoints as needed.
+- **proxy_username**
 
-  See also `http_proxy` and `no_proxy`.
+  The username of your local networks' HTTP/HTTPS proxy for unencrypted traffic
+  (if you have one). If you specify a proxy username, you must also provide a
+  proxy password. Provide host, port, user, and password information separately.
+
+  See also `proxy_host`, `proxy_port`, and `proxy_password`
+
+- **proxy_password**
+
+  The hostname of your local networks' HTTP/HTTPS proxy for unencrypted traffic
+  (if you have one). If you specify a proxy password, you must also provide a
+  proxy username. Provide host, port, user, and password information separately.
+
+  See also `proxy_host`, `proxy_port`, and `proxy_username`
 
 - **image.registry** (required)
 
@@ -421,11 +422,67 @@ reference.
 
 - **image.tag**
 
-  The tag to use when retrieving images from the registry.  This is provided
-  for debugging and advanced use cases; you generally will not need to
-  change this.
+  The tag to use when retrieving non-molecule images from the registry.  This
+  is provided for debugging and advanced use cases; you generally will not
+  need to change this.
 
-  Defaults to `latest`.
+  Defaults to the current release version.
+
+- **image.moleculeName**
+
+  The molecule/atom image name to be used for the Boomi Molecule. If not
+  specified this will default to 'boomi/cloud'. Use of a different image may
+  result in untested behavior and is not recommended.
+
+  See also: `image.moleculeTag`.
+
+- **image.moleculeTag**
+
+  The molecule/atom image version to be used for the Boomi Molecule. If not set
+  this will default to the version packaged and verified with this release. User
+  of a different image version may result in untested behavior and is not
+  recommended.
+
+  See also: `image.moleculeName`.
+
+- **ingress.certs.cert**
+
+  Path to the certificate file to be used for TLS ingress.
+
+  This is required if `ingress` is set.
+
+  See also: `ingress.certs.key` and `ingress.hostname`
+
+- **ingress.certs.key**
+
+  Path to the key file that pairs with the certificate provided by
+  `ingress.certs.cert`
+
+  This is required if `ingress` is set.
+
+  See also: `ingress.certs.cert` and `ingress.hostname`
+
+- **ingress.hostname**
+
+  The fully qualified hostname for the Ingress resource, this must match the
+  CN in the certificate and key provided by `boomi.certs.*`.
+
+  This is required if `ingress` is set.
+
+  See also: `ingress.certs.cert` and `ingress.certs.key`
+
+- **livenessProbes.enabled**
+
+  Liveness probes are used to check the status of a container and if the
+  molecule process is unavailable for an extended period of time allow
+  TKGI to replace the pod. Initial liveness is checked at 5-minutes and
+  then at 2-minute intervals thereafter. The check must fail three times
+  consequtively before the container is replaced automatically.
+
+  Liveness probes may cause containers under heavy load to be shut down
+  in an undesireable fashion. If this occurs, turn off the livenessProbe.
+
+  This defaults to 'yes'
 
 - **no_proxy**
 
@@ -451,10 +508,26 @@ reference.
 
   The name of a TKGI Service Account that should be used for Kubernetes API
   access, when Boomi Data Services needs to introspect its own deployment.
-  This happens primarily when registering routes with VMware Tanzu,
+  This happens primarily when registering routes with Tanzu Cloud Foundry,
   pursuant to the setting of `cf.register`.
 
   See also `rbac.create` and `cf.register`.
+
+- **resources.\***
+
+  Resources for CPU and Memory are configured per-container for `broker`, `dap`,
+  and `molecule`. These are configured with the container name as a child to the
+  `resources` attribute and as a parent to the `requests` and `limits attributes
+  as shown in the following example:
+
+    resources:
+      molecule:
+        requests:
+          cpu: "259m"
+          memory: "131Mi"
+        limits:
+          cpu: 2
+          memory: 512Mi
 
 - **service.type**
 
@@ -464,58 +537,47 @@ reference.
 
   Defaults to `LoadBalancer`.
 
-- **storage.autofs**
+- **storage.local.size**
 
-  If you have data volumes that you need your Boomi Data Services
-  installation to be able to access, as part of the process and
-  web service workflows you are deploying to it, you can set those
-  up via this configuration value.
+  Configures the size of the local persistent volume created at `/app/data`.
 
-  This specifies the complete, direct map of Linux automounter
-  configuration, to be used on the `molecule` pods.
+  Defaults to 2Gi if not set.
 
-  Here is an example, that mounts two volumes into `/data/...`:
+  See also: `storage.local.storageClass`
 
-    storage:
-      autofs: |
-        /data/etl3  -fstype=nfs,ro    10.7.8.9:/nas/_filer1/etl3
-        /data/ftw   -fstype=nfs       172.16.31.99:/s/ee/whse1/ftw-prod
+- **storage.local.storageClass**
 
-  Any Boomi processes or workflows deployed to an installation
-  with that configuration will be able to seamlessly and
-  transparently access the `/data/etl3` and `/data/ftw` volumes,
-  remotely, and on-demand.  More importantly, failure of the
-  backing storage systems will not prevent the Boomi Data Services
-  installation from booting and performing any _other_ work.
+  Provides a local persistent volume based on `storageClass` mounted as
+  `/app/data/` for more performant and consistent processing.
 
-  For more details on the format of this key, see the Linux manual
-  page for autofs, `autofs(5)`.
+  This is required if `storage.local` is set.
+
+  See also: `storage.local.size`
 
 - **storage.mode**
 
-  Identifies how you wish to provision the shared storage component that the
-  Boomi Cloud Molecule nodes use for communication, data-sharing, and leader
-  election.
-
-  There are two acceptable values: `provisioned` and `external`.
-
-  In _provisioned_ mode, the Kubernetes cluster handles the NFS bits, and
-  mounts shared volumes into all pods as necessary.  This requires
-  first-class support for NFS-backed volumes in your TKGI cluster.  You may
+  In _provisioned_ mode, the Kubernetes cluster handles the NFS configuration
+  through a storageClass that is backed by an NFS storage provisioner and
+  mounts shared volumes into all pods as necessary.  You may
   override the size of the provisioned volume via the `storage.size`
-  configuration value.
+  configuration value. Set `storage.storageClass` to match the storageClass
+  attached to your NFS provisioner.
 
-  In _external_ mode, the pods themselves mount static, externally-hosted
-  NFS volumesm which you must configure with the `storage.server` and
-  `storage.path` configuration values.
+  In _external_ mode, NFS volumes are provisioned and managed external to the
+  Kubernetes cluster. External mode NFS supports an administrator provided PV
+  via `storage.pvName`, or self-created PV mapped to an NFS host through
+  `storage.server` and `storage.path`.
 
-  Defaults to `provisioned`.
+  See also: `storage.storageClass`
 
 - **storage.server**
 
   The hostname (fully-qualified) or IP address of a remote NFS server.
   In _external_ mode (see `storage.mode`), this is the server that will host
-  the Boomi Cloud Molecule installation volume.
+  the Boomi Cloud Atom shared installation volume.
+
+  This setting is mutually exclusive of `storage.pvName`. When `storage.pvName`
+  is set, this option is ignored.
 
   See also `storage.mode` and `storage.path`.
 
@@ -525,14 +587,39 @@ reference.
   mode (see `storage.mode`).  This volume must be accessible, in read-write
   mode, to the TKGI pod network.
 
-  See also `storage.mode` and `storage.server`.
-
-- **storage.nfsopt**
-
-  An optional set of mount options (passed via `-o` to `mount`) for use in
-  _external_ storage mode (see `storage.mode`).
+  This setting is mutually exclusive of `storage.pvName`. When `storage.pvName`
+  is set, this option is ignored.
 
   See also `storage.mode` and `storage.server`.
+
+- **storage.pvName**
+
+  The PV name for an NFS volume that has been mapped to the TKGI cluster for
+  use as the Boomi Cloud Atom shared installation volume. This setting is
+  mutually exclusive of `storage.server` and `storage.path` and takes precedence
+  when both options are specified. For an example PV definition see
+  `extras/pv-definition.yml`.
+
+  Known Issues:
+  * When reusing a pre-defined PV it is necessary to release the claim of the
+  original cluster by setting the UID on the claimRef to NULL using:
+  `k patch pv deployment1-dell-boomi-nfs-pv -p '{"spec":{"claimRef":{"uid":null}}}'`
+  where `deployment1-dell-boomi-nfs-pv` is the pvName in use.
+  * When a deployment is removed and replaced with another of the same name, the
+  example PV will "RETAIN" data. The the resulting AtomCloud will be a
+  continuation of the original cluster. If this is not desired, connect to the
+  NFS volume and clear its data manually.
+
+  See also `storage.mode`
+
+- **storage.storageClass**
+
+  The storage class name (storageclass) to be used for the shared storage
+  component. This storage class should be provided by an NFS provisioner
+  such as [nfs-client-provisioner](https://github.com/helm/charts/tree/master/stable/nfs-client-provisioner)
+  or [nfs-server-provisioner](https://hub.helm.sh/charts/stable/nfs-server-provisioner).
+
+  Defaults to "nfs".
 
 - **storage.size**
 
